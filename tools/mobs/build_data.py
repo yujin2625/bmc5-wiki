@@ -109,7 +109,7 @@ NOTE = {
     "minecraft:hoglin": {"breed": "진홍빛 균으로 번식합니다. 공격적이니 조심하세요."},
 }
 
-KIND_TAME = "길들이기"; KIND_BREED = "번식"; KIND_TRUST = "신뢰"; KIND_EGG = "알"; KIND_DUP = "복제"; KIND_HATCH = "부화"; KIND_BUILD = "소환"
+KIND_TAME = "길들이기"; KIND_BREED = "번식"; KIND_TRUST = "신뢰"; KIND_EGG = "알"; KIND_DUP = "복제"; KIND_HATCH = "부화"; KIND_BUILD = "소환"; KIND_GROW = "새끼 키우기"
 
 mobs = []
 def add(id, name, en, mod, sections, tags, extra_search=""):
@@ -201,9 +201,21 @@ add("minecraft:happy_ghast", "행복한 가스트", "Happy Ghast", "vanillabackp
     {"k": KIND_TAME, "items": with_icons(ex("minecraft:happy_ghast_food")),
      "note": "눈덩이를 주면 새끼가 빨리 자랍니다. 다 자라면 하네스를 씌워 최대 4명이 탈 수 있습니다."},
     {"k": KIND_BREED, "items": [], "note": "번식할 수 없습니다.", "no": True}], [KIND_HATCH, KIND_TAME], "하네스")
+# Sulfur Cube: checked in VanillaBackport SulfurCube/AbstractCubeMob bytecode + config/vanillabackport-common.toml
 add("minecraft:sulfur_cube", "유황 큐브", "Sulfur Cube", "vanillabackport", [
-    {"k": KIND_TAME, "items": with_icons(ex("minecraft:sulfur_cube_food")), "note": "슬라임볼이 먹이 아이템으로 등록되어 있습니다. 자세한 동작은 게임 안 EMI에서 확인하세요."}],
-    [KIND_TAME])
+    {"k": KIND_GROW, "items": with_icons(ex("minecraft:sulfur_cube_food")),
+     "note": "새끼 유황 큐브에게 슬라임볼을 주면 빨리 자랍니다. 슬라임볼을 들고 있으면 8칸 안의 새끼가 따라옵니다. 길들이는 기능은 없습니다."},
+    {"k": KIND_BREED, "items": [], "no": True,
+     "note": "먹이로 번식시킬 수 없습니다. 대신 큰 유황 큐브가 죽으면 새끼 2마리로 갈라집니다. 점화된 상태로 죽으면 갈라지지 않습니다."},
+    {"k": "블록 먹이기", "items": with_icons([["참나무 판자", "minecraft:oak_planks"], ["TNT", "minecraft:tnt"], ["푸른얼음", "minecraft:blue_ice"],
+                                              ["하얀색 양털", "minecraft:white_wool"], ["마그마 블록", "minecraft:magma_block"], ["벌집 블록", "minecraft:honeycomb_block"],
+                                              ["철 블록", "minecraft:iron_block"], ["영혼 모래", "minecraft:soul_sand"]]),
+     "note": "다 자란 큐브에게 블록을 주면 몸 안에 삼켜서 성질이 바뀝니다. 판자·원목은 잘 튀고, 얼음류는 미끄러지고, 양털은 가벼워지고, 금속 블록은 무겁고 납작해집니다. 마그마 블록은 닿으면 뜨겁고, 벌집 블록은 끈적입니다. 가위로 우클릭하면 삼킨 블록을 뱉습니다. 삼킬 수 있는 블록을 들고 있으면 어른이 따라옵니다."},
+    {"k": "폭발", "items": with_icons([["부싯돌과 부시", "minecraft:flint_and_steel"], ["화염구", "minecraft:fire_charge"]]),
+     "note": "TNT를 삼킨 큐브만 터집니다. 부싯돌과 부시나 화염구로 우클릭하거나 레드스톤 신호를 받으면 점화됩니다. 서버 설정에서 폭발이 켜져 있습니다(do_sulfur_cubes_explode)."},
+    {"k": "포획", "items": with_icons([["양동이", "minecraft:bucket"]]),
+     "note": "다 자란 큐브는 빈 양동이로 담아 옮길 수 있습니다. 새끼는 담을 수 없습니다. 유황 동굴 바이옴에서 자연 생성됩니다."}],
+    [KIND_GROW], "슬라임볼 양동이 유황 동굴")
 add("aether:moa", "모아", "Moa", "aether", [
     {"k": KIND_HATCH, "items": with_icons([["파란 모아 알", "aether:blue_moa_egg"], ["하얀 모아 알", "aether:white_moa_egg"], ["검은 모아 알", "aether:black_moa_egg"]]),
      "note": "모아 알을 인큐베이터에 넣고 앰브로시움 횃불로 데우면 부화합니다. 부화시킨 플레이어의 모아가 됩니다."},
@@ -221,17 +233,35 @@ for g in [("minecraft:iron_golem", "철 골렘", "Iron Golem", "철 블록 4개�
           ("minecraft:snow_golem", "눈 골렘", "Snow Golem", "눈 블록 2개를 세로로 쌓고 위에 조각된 호박을 올립니다.", [["눈 블록", "minecraft:snow_block"], ["조각된 호박", "minecraft:carved_pumpkin"]])]:
     add(g[0], g[1], g[2], "minecraft", [{"k": KIND_BUILD, "items": with_icons(g[4]), "note": g[3]}], [KIND_BUILD])
 
-BREEDS = [("fire", "불 드래곤", "사막 피라미드", "6.5%", "용암 속이나 마그마 블록 근처"), ("forest", "숲 드래곤", "정글 사원", "20%", "정글이나 숲 바이옴"),
-          ("ice", "얼음 드래곤", "이글루", "15%", "추운 바이옴, 얼음·눈 블록 근처"), ("lush", "무성한 드래곤", "보물 상자, 정글 사원, 삼림 대저택", "10~20%", "무성한 동굴이나 정글"),
-          ("end", "엔드 드래곤", "요새 복도", "10%", "엔드 바이옴, 드래곤의 숨결 근처"), ("sculk", "스컬크 드래곤", "고대 도시", "10%", "깊은 어둠 바이옴, 스컬크 블록 근처"),
-          ("nether", "네더 드래곤", "보루 잔해 보물, 네더 요새", "35% / 10%", "네더"), ("aether", "에테르 드래곤", "던전", "15%", "높이 200 이상, 산이나 에테르"),
-          ("ghost", "유령 드래곤", "폐광", "15%", "Y 0 아래, 밝기 3 이하"), ("water", "물 드래곤", "묻힌 보물", "17.5%", "물속, 바다·강 바이옴"),
-          ("amethyst", "자수정 드래곤", "요새 도서관", "10%", "자수정 블록 근처")]
-for key, nm, where, pct, hab in BREEDS:
+# Dragon Mounts Remastered: checked in TameableDragonEntity / DragonBreedableComponent / DragonOwnershipComponent /
+# DMREggBlock(Entity) / DragonBreedsRegistry bytecode, data/dmr/dmr/breeds/*.json, data/dmr/tags/block/*, config/dmr-server.toml.
+# No breed json sets taming_items/breeding_items, so every breed falls back to #minecraft:fishes for both.
+BREEDS = [
+    ("fire", "불 드래곤", "사막 피라미드 상자 6.5%", "용암 속에 있으면서 오버월드일 것(둘 다 필요). 불·용암·마그마 블록·모닥불 근처"),
+    ("forest", "숲 드래곤", "정글 사원 상자 20%", "정글이나 숲 바이옴. 나뭇잎·묘목·꽃·덩굴 근처"),
+    ("ice", "얼음 드래곤", "이글루 상자 15%", "추운 오버월드 바이옴. 얼음·눈 블록 근처"),
+    ("lush", "무성한 드래곤", "삼림 대저택 상자 20%, 정글 사원 상자 10%, 진달래 잎을 부술 때 0.01%", "무성한 동굴이나 정글 바이옴. 이끼·동굴 덩굴·발광 이끼 근처"),
+    ("end", "엔드 드래곤", "요새 복도 상자 10%. 엔더 드래곤 알도 부화시킬 수 있습니다(allow_egg_override)", "엔드 바이옴, 드래곤의 숨결. 엔드 돌·퍼퍼·엔드 막대기·후렴 식물 근처"),
+    ("sculk", "스컬크 드래곤", "고대 도시 상자 10%", "깊은 어둠 바이옴. 스컬크 블록 근처"),
+    ("nether", "네더 드래곤", "보루 잔해 보물 상자 35%, 네더 요새 상자 10%", "네더 바이옴. 네더랙·영혼 모래·발광석·네더 사마귀 블록 같은 네더 블록 근처"),
+    ("aether", "에테르 드래곤", "던전 상자 15%", "높이 200 이상, 산 바이옴이나 에테르. 하얀색 양털 근처"),
+    ("ghost", "유령 드래곤", "폐광 상자 15%", "Y 0 아래이면서 밝기 3 이하일 것(둘 다 필요). 흑요석·우는 흑요석"),
+    ("water", "물 드래곤", "묻힌 보물 상자 17.5%", "물속, 바다·강·해변 바이옴. 산호·해초·켈프·프리즈머린·바다 랜턴 근처"),
+    ("amethyst", "자수정 드래곤", "요새 도서관 상자 10%", "자수정 블록·싹트는 자수정·자수정 송이 근처"),
+]
+fish = with_icons(ex("minecraft:fishes"))
+meat = with_icons(ex("minecraft:meat"))
+for key, nm, where, hab in BREEDS:
     add(f"dmr:{key}", nm, f"{key.title()} Dragon", "dmr", [
-        {"k": KIND_HATCH, "items": [], "note": f"드래곤 알은 {where} 상자에서 {pct} 확률로 나옵니다. 알을 설치하고 우클릭하면 부화가 시작되고, 부화시킨 플레이어의 드래곤이 됩니다."},
-        {"k": "서식지", "items": [], "note": f"부화 중인 알 주변 환경이 {hab}이면 이 종으로 자랍니다. 빈 드래곤 알은 설치한 곳의 환경에 맞춰 종이 정해집니다."}],
-        [KIND_HATCH], "드래곤 알 dragon egg")
+        {"k": KIND_HATCH, "items": [],
+         "note": f"알 얻는 곳: {where}. 알을 설치하고 우클릭하면 부화가 시작되고, 이 서버 설정으로 600초(10분) 뒤 새끼가 나옵니다. 깨어난 새끼는 아직 야생 상태라서 길들여야 합니다. 새끼는 600초 뒤 어른이 됩니다."},
+        {"k": KIND_TAME, "items": fish,
+         "note": "물고기를 줄 때마다 1/5 확률로 길들여집니다. 이 서버는 야생 드래곤이 자연 생성되지 않으므로(enable_natural_dragon_spawns = false) 알에서 깨어난 새끼를 길들이면 됩니다. 길들인 뒤 안장을 얹어 타고, 갑옷과 상자를 달 수 있으며, 웅크리고 우클릭하면 인벤토리가 열립니다."},
+        {"k": KIND_BREED, "items": fish, "req": "길들인 어른 드래곤 두 마리",
+         "note": "둘 다 물고기를 주면 번식하고, 그 자리에 이미 부화 중인 알이 생깁니다. 알의 종은 부모 종, 부모가 있는 곳 환경에 맞는 종, 이들을 섞은 하이브리드 중 무작위로 정해집니다(habitat_offspring, allow_hybridization 켜짐)."},
+        {"k": "서식지", "items": [], "note": f"번식할 때 부모 주변이 이 조건에 맞으면 이 종의 알이 나올 수 있습니다: {hab}."},
+        {"k": "회복", "items": meat, "note": "길들인 드래곤이 다쳤을 때 고기류를 주면 음식 포만도만큼 체력이 찹니다."}],
+        [KIND_HATCH, KIND_TAME, KIND_BREED, KIND_EGG], "드래곤 알 dragon egg 안장 하이브리드")
 
 order = {"minecraft": 0, "vanillabackport": 1, "alexsmobs": 2, "friendsandfoes": 3, "twilightforest": 4, "aether": 5, "deep_aether": 6, "dmr": 7}
 mobs.sort(key=lambda x: (order.get(x["m"], 9), x["n"]))

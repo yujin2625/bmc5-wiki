@@ -146,8 +146,8 @@ mark{background:var(--gold);color:#2a170a}
 
 <script>
 const DATA = /*__DATA__*/;
-const KINDS = ["길들이기","번식","신뢰","알","부화","복제","소환"];
-const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house"};
+const KINDS = ["길들이기","번식","신뢰","알","부화","새끼 키우기","복제","소환"];
+const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house","새끼 키우기":"sprout","회복":"heart","포획":"bucket","폭발":"tnt","블록 먹이기":"block"};
 
 // ---- pixel sprites drawn to canvas -> data URLs ----
 const PAL = {k:"#2a170a",r:"#d8332a",R:"#ff8a7a",w:"#f4efe0",W:"#c9c0a8",y:"#f4c542",Y:"#c78a12",e:"#f2ead2",E:"#cfc29b",s:"#9ad04a",o:"#e07a1f",O:"#a84f0c",g:"#4a8a2a",b:"#7a5230",B:"#5a3a1e",p:"#d86fd0",P:"#a03a98"};
@@ -158,6 +158,10 @@ const SPR = {
  star:["...yy...","...yy...","yyyYYyyy",".yyYYyy.","..yyyy..",".yy..yy.","yy....yy","........"],
  egg:["..eeee..",".eeeeee.",".eeEeee.","eeeeeEee","eeEeeeee","eeeeeeEe",".eeeeee.","..eeee.."],
  pumpkin:["...gg...","..oooo..",".oOooOo.","ooooOooo","oOOoOOoo","oooooooo",".oOOOOo.","..oooo.."],
+ sprout:["........","..ss.ss.",".sssss..","...ss...","...s....","..gs....","...g....","........"],
+ bucket:["........",".W....W.","WwWWWWwW","W.wwwwW.",".W....W.",".WwwwwW.","..WWWW..","........"],
+ tnt:["...kk...","...k....","rrrrrrrr","rRrrRrrr","wwwwwwww","wkwkkwkw","rrrrrrrr","rRrrRrrr"],
+ block:["bbbbbbbb","bBbbbbBb","bbbBbbbb","bbbbbbBb","bBbbbbbb","bbbbBbbb","bbBbbbBb","bbbbbbbb"],
  house:["...bb...","..bbbb..",".bbbbbb.","bbbbbbbb",".wWwwBw.",".wwwwBw.",".wwwwBw.",".BBBBBB."]
 };
 function sprite(name){
