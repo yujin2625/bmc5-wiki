@@ -68,6 +68,11 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
       <b>장비·인챈트 도감</b><span>무기·갑옷·방패·도구·장신구 468개와 인챈트 69종. 수치, 만드는 법, 붙일 수 있는 인챈트를 서로 이어서 보여 줍니다</span>
       <span class="go">도감 열기 ▶</span>
     </a>
+    <a class="page" href="storage/">
+      <span class="ico"><canvas data-sprite="chest" width="8" height="8" aria-hidden="true"></canvas></span>
+      <b>원격 창고 가이드</b><span>Tom's Simple Storage로 상자를 하나로 묶고, 신호기와 고급 무선 터미널로 다른 차원에서도 꺼내 쓰는 방법</span>
+      <span class="go">가이드 열기 ▶</span>
+    </a>
   </nav>
   <footer>모드팩 버전: Better MC [NEOFORGE] BMC5 · Minecraft 1.21.1</footer>
 </main>
@@ -81,8 +86,9 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
     for(let y=0;y<16;y++){x.fillStyle=y<h?G[Math.floor(rnd()*3)]:D[Math.floor(rnd()*4)];x.fillRect(i,y,1,1);}}
   const SPR={heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."],
     sword:["......gw",".....gwg","....gwg.","...gwg..","b.gwg...",".bwg....",".Bb.....","B.b....."],
-    book:["........",".PPPPPP.",".PwwwwP.",".PpppPP.",".PwwwwP.",".PpppPP.",".PPPPPP.","........"]};
-  const PAL={r:"#d8332a",R:"#ff8a7a",g:"#9aa3ad",w:"#f4efe0",b:"#7a5230",B:"#5a3a1e",p:"#b58cff",P:"#7b4fc2"};
+    book:["........",".PPPPPP.",".PwwwwP.",".PpppPP.",".PwwwwP.",".PpppPP.",".PPPPPP.","........"],
+    chest:["........",".CCCCCC.",".cccccc.",".CCyyCC.",".ccyycc.",".cccccc.",".CCCCCC.","........"]};
+  const PAL={r:"#d8332a",R:"#ff8a7a",g:"#9aa3ad",w:"#f4efe0",b:"#7a5230",B:"#5a3a1e",p:"#b58cff",P:"#7b4fc2",C:"#7a4e2b",c:"#b07a3e",y:"#e9c46a"};
   document.querySelectorAll("canvas[data-sprite]").forEach(cv=>{const g=cv.getContext("2d");
     SPR[cv.dataset.sprite].forEach((row,y)=>[...row].forEach((ch,i)=>{if(PAL[ch]){g.fillStyle=PAL[ch];g.fillRect(i,y,1,1);}}));});
 })();

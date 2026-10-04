@@ -1,0 +1,312 @@
+<title>BMC5 원격 창고 가이드</title>
+<style>
+@font-face{font-family:"MCPixel";src:url(__FONT_URL__) format("truetype");font-display:block}
+/* Layout: same plank/parchment kit as the other guides; one long reading column of numbered steps */
+:root{
+  --plank:#b8834a; --plank-line:#8f6232; --plank-hi:#c9965a;
+  --paper:#f4e4c1; --paper-2:#ead3a3; --ink:#3a2412; --ink-soft:#6e4a2a;
+  --edge:#2a170a; --hi:#fff6dc; --lo:#b48c55;
+  --grass:#5f9a2c; --grass-dk:#3f6e1a; --gold:#e9a628; --red:#b2412c; --sky:#4f7fb8;
+  --slot-dk:#373737; --slot-hi:#ffffff; --slot-bg:#c6c6c6; --slot-ink:#2a2a2a;
+  --font:"MCPixel","Malgun Gothic","Apple SD Gothic Neo",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a;
+  --grass:#86c447; --grass-dk:#5f9a2c; --gold:#ffc04d; --red:#e0664c; --sky:#86b2e8;
+  --slot-dk:#1e1e1e; --slot-hi:#8d8d8d; --slot-bg:#3c3c3c; --slot-ink:#e8e8e8;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a;
+  --grass:#86c447; --grass-dk:#5f9a2c; --gold:#ffc04d; --red:#e0664c; --sky:#86b2e8;
+  --slot-dk:#1e1e1e; --slot-hi:#8d8d8d; --slot-bg:#3c3c3c; --slot-ink:#e8e8e8;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:none}
+body{margin:0;font-family:var(--font);font-size:16px;line-height:26px;color:var(--ink);background-color:var(--plank);
+  background-image:linear-gradient(var(--plank-line) 0 4px,transparent 4px),
+    linear-gradient(90deg,transparent 0 60%,var(--plank-line) 60% calc(60% + 4px),transparent 0),
+    linear-gradient(90deg,transparent 0 20%,var(--plank-line) 20% calc(20% + 4px),transparent 0),
+    linear-gradient(var(--plank-hi) 0 4px,transparent 4px);
+  background-size:100% 64px,256px 64px,256px 64px,100% 64px;background-position:0 0,0 0,128px 32px,0 8px}
+canvas{image-rendering:pixelated}
+header.hero{padding-inline:16px}
+#ground{display:block;width:calc(100% + 32px);margin-inline:-16px;height:64px}
+.hero-inner{max-width:880px;margin:0 auto;padding-block:20px}
+.hero h1{margin:0 0 8px;font-size:32px;line-height:40px;font-weight:normal;color:var(--paper);text-shadow:4px 4px 0 var(--edge);text-wrap:balance}
+.hero h1 b{color:var(--gold);font-weight:normal}
+.hero p{margin:0;max-width:62ch;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.home{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px 4px;font:inherit;color:var(--ink);background:var(--paper-2);text-decoration:none;padding:4px 12px;
+  box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),0 0 0 4px var(--edge)}
+.home:hover{filter:brightness(1.08)}
+.home:focus-visible,a:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+main{max-width:880px;margin:0 auto;padding-inline:16px;padding-block:8px 48px;display:grid;gap:24px}
+.panel{background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),6px 6px 0 rgba(0,0,0,.35);padding:20px 24px;min-width:0}
+.panel h2{margin:0 0 12px;font-size:24px;line-height:32px;font-weight:normal;display:flex;gap:12px;align-items:center;text-wrap:balance}
+.panel h2 .n{flex:none;display:inline-grid;place-items:center;width:36px;height:36px;background:var(--grass);color:#fff;
+  box-shadow:inset 4px 4px 0 color-mix(in srgb,#fff 35%,var(--grass)),inset -4px -4px 0 var(--grass-dk)}
+.panel h3{margin:20px 0 8px;font-size:18px;font-weight:normal;color:var(--ink-soft)}
+.panel p{margin:0 0 12px;max-width:68ch}
+.panel p:last-child{margin-bottom:0}
+.panel ol,.panel ul{margin:0 0 12px;padding-left:24px;max-width:68ch}
+.panel li{margin-bottom:6px}
+.panel a{color:var(--sky)}
+b.k{font-weight:normal;color:var(--red)}
+kbd{font:inherit;background:var(--edge);color:var(--paper);padding:0 6px}
+.tldr{border-color:var(--edge);background:var(--paper-2)}
+.tldr ol{counter-reset:none}
+.note,.warn{padding:12px 16px;margin:12px 0;border-left:8px solid var(--sky);background:color-mix(in srgb,var(--sky) 14%,var(--paper))}
+.warn{border-left-color:var(--red);background:color-mix(in srgb,var(--red) 14%,var(--paper))}
+.note p,.warn p{margin:0}
+.toc{display:flex;flex-wrap:wrap;gap:8px 12px;margin:0;padding:0;list-style:none}
+.toc a{color:var(--ink);background:var(--paper-2);text-decoration:none;padding:2px 10px;box-shadow:0 0 0 4px var(--edge);display:inline-block}
+.toc a:hover{filter:brightness(1.08)}
+/* tables */
+.tw{overflow-x:auto;margin:0 0 12px}
+table{border-collapse:collapse;width:100%;min-width:480px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px;border-bottom:4px solid var(--paper-2);vertical-align:top}
+th{font-weight:normal;color:var(--paper);background:var(--edge)}
+td.num,th.num{text-align:right;white-space:nowrap}
+tr.hl td{background:color-mix(in srgb,var(--gold) 22%,var(--paper))}
+/* recipes */
+.recipes{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:16px;margin:8px 0 12px}
+.rc{background:var(--paper-2);padding:12px;display:grid;gap:8px;align-content:start;box-shadow:0 0 0 4px var(--edge)}
+.rc .t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.rc .t b{font-weight:normal}
+.rc .t span{color:var(--ink-soft);white-space:nowrap}
+.grid{display:grid;grid-template-columns:repeat(3,64px);gap:4px}
+.s{width:64px;height:64px;background:var(--slot-bg);box-shadow:inset 4px 4px 0 var(--slot-dk),inset -4px -4px 0 var(--slot-hi);
+  display:grid;place-items:center;font-size:14px;line-height:16px;color:var(--slot-ink);text-align:center;padding:6px;overflow:hidden;word-break:keep-all}
+.rc .legend{margin:0;font-size:14px;line-height:20px;color:var(--ink-soft)}
+/* beacon pyramid */
+.pyr{--u:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin:8px 0 12px}
+.pyr figure{margin:0;display:grid;gap:4px;justify-items:center}
+.pyr figcaption{font-size:14px;line-height:18px;color:var(--ink-soft);text-align:center;white-space:pre-line}
+footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+footer p{margin:0 0 8px}
+@media (max-width:520px){.panel{padding:16px}.panel h2{font-size:20px}.pyr{--u:7px;gap:8px}}
+</style>
+
+<header class="hero">
+  <canvas id="ground" width="320" height="16" aria-hidden="true"></canvas>
+  <div class="hero-inner">
+    <a class="home" href="../">첫 화면으로</a>
+    <h1>BMC5 <b>원격 창고 가이드</b></h1>
+    <p>Tom's Simple Storage로 기지 창고를 하나로 묶고, 어디서든(다른 차원에서도) 꺼내 쓰는 방법입니다. 수치는 모드 2.4.2 코드와 이 팩의 설정 파일에서 확인했습니다.</p>
+  </div>
+</header>
+
+<main>
+  <section class="panel tldr" aria-labelledby="tl">
+    <h2 id="tl">한 줄 요약</h2>
+    <p><b class="k">고급 무선 터미널</b>을 기지 터미널에 묶고, 그 터미널 8블록 안에 <b class="k">4단 신호기</b>를 세우면 어느 차원에서든 창고가 열립니다. 단, 기지 청크가 <b class="k">로드되어 있어야</b> 해서 서버에서는 강제 로드가 필요합니다.</p>
+    <ol>
+      <li>상자들을 <b>인벤토리 커넥터</b>에 이어 붙여 창고 하나로 묶기</li>
+      <li>커넥터에 <b>저장 터미널</b>이나 <b>제작 터미널</b> 붙이기</li>
+      <li>무선 터미널을 대장장이 작업대에서 네더라이트로 올려 <b>고급 무선 터미널</b> 만들기</li>
+      <li>터미널에 대고 <kbd>웅크리기 + 우클릭</kbd>으로 묶기</li>
+      <li>터미널 8블록 안에 신호기: 1단이면 같은 차원 어디서나, 4단이면 다른 차원에서도</li>
+      <li>Open Parties and Claims로 기지 청크를 차지하고 강제 로드 켜기</li>
+    </ol>
+    <ul class="toc" aria-label="목차">
+      <li><a href="#recipes">만드는 법</a></li>
+      <li><a href="#s1">창고 묶기</a></li>
+      <li><a href="#s2">터미널</a></li>
+      <li><a href="#s3">고급 무선 터미널</a></li>
+      <li><a href="#s4">신호기</a></li>
+      <li><a href="#s5">청크 로딩</a></li>
+      <li><a href="#s6">인벤토리 링크</a></li>
+      <li><a href="#s7">무한에 가깝게 늘리기</a></li>
+      <li><a href="#faq">막힐 때</a></li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="recipes">
+    <h2 id="recipes">만드는 법</h2>
+    <p>나무 판자는 어떤 나무든 됩니다. 상자 칸에는 일반 상자 말고 다른 상자(<code>c:chests</code> 태그)도 들어갑니다. 칸이 좁아 줄여 쓴 이름: 발광석 = 발광석 가루, 유리 = 무색 유리, 다이아 = 다이아몬드, 강화 형판 = 네더라이트 강화 대장장이 형판, 네더 주괴 = 네더라이트 주괴, 네더 파편 = 네더라이트 파편, 매끈한 돌 = 매끄러운 돌.</p>
+    <div class="recipes" id="rcp"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="s1">
+    <h2 id="s1"><span class="n">1</span>창고를 하나로 묶기</h2>
+    <p><b>인벤토리 커넥터</b>는 자기에게 닿아 있는 상자, 그 상자에 닿아 있는 상자... 식으로 이어진 보관함을 모두 하나의 창고로 봅니다. 상자를 커넥터 옆에 줄줄이 붙여 쌓으면 됩니다.</p>
+    <ul>
+      <li>커넥터가 찾아가는 범위: 커넥터에서 <b>16블록</b>까지 (서버 설정 <code>inventoryConnectorRange</code>, 기본 16)</li>
+      <li>상자 사이를 띄워야 하면 <b>인벤토리 트림</b>을 끼워서 잇습니다. 트림은 보관함이 아니라 연결 통로입니다.</li>
+      <li>상자, 통, 셜커 상자, 화로처럼 아이템 칸이 있는 블록이면 대부분 연결됩니다.</li>
+      <li>16블록보다 먼 곳은 <b>인벤토리 케이블</b>로 잇고, 케이블 끝에서 상자를 바라보게 <b>인벤토리 케이블 커넥터</b>를 놓습니다. 케이블은 네트워크 하나에 최대 <b>2048개</b>까지 셉니다.</li>
+    </ul>
+    <div class="note"><p>커넥터는 네트워크에 하나만 두는 게 원칙입니다. 커넥터끼리 서로 이어 버리면 "저장 시스템에 루프가 있음" 경고가 뜹니다.</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="s2">
+    <h2 id="s2"><span class="n">2</span>터미널 붙이기</h2>
+    <p><b>저장 터미널</b>을 커넥터(또는 트림, 이어진 상자 덩어리)에 붙여 놓으면 연결된 모든 상자의 아이템이 한 화면에 합쳐져 나옵니다. 검색과 정렬이 되고, 아이템을 넣으면 빈 자리를 찾아 알아서 들어갑니다.</p>
+    <p><b>제작 터미널</b>은 저장 터미널에 3×3 제작 칸이 붙은 것입니다. 재료가 창고에 있으면 창고에서 바로 꺼내 씁니다. 고급 무선 터미널로 멀리서 열 때도 제작까지 되니 제작 터미널을 추천합니다.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="s3">
+    <h2 id="s3"><span class="n">3</span>고급 무선 터미널</h2>
+    <p>그냥 <b>무선 터미널</b>은 손이 닿는 거리만 늘려 줍니다(16블록 떨어진 터미널을 바라보고 우클릭). 멀리서 쓰려면 <b>고급 무선 터미널</b>이 필요합니다.</p>
+    <ol>
+      <li>무선 터미널 + 네더라이트 강화 대장장이 형판 + 네더라이트 주괴를 <b>대장장이 작업대</b>에 넣습니다.</li>
+      <li>기지 터미널(저장/제작 터미널)에 대고 <kbd>웅크리기 + 우클릭</kbd>. "고급 무선 터미널 바인딩" 메시지가 뜨면 끝입니다. 아이템 설명에 묶인 좌표와 차원이 나옵니다.</li>
+      <li>손에 들고 우클릭하면 묶인 터미널 화면이 열립니다. 기본 범위는 <b>64블록</b>(서버 설정 <code>advWirelessRange</code>)입니다.</li>
+    </ol>
+    <div class="note"><p>키로도 열 수 있습니다. 조작 설정에서 <b>[Tom's Simple Storage] Open Terminal</b>에 키를 정하면, 고급 무선 터미널이 인벤토리나 장신구 칸 어딘가에 있을 때 그 키로 바로 열립니다.</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="s4">
+    <h2 id="s4"><span class="n">4</span>신호기로 범위 없애기</h2>
+    <p>묶어 둔 터미널에서 <b>8블록 반경 안</b>에 신호기가 있으면 범위가 늘어납니다. 신호기 효과(신속, 성급함 등)는 아무거나 골라도 되고, 피라미드 층수만 봅니다.</p>
+    <div class="tw"><table>
+      <thead><tr><th>신호기 층수</th><th class="num">광물 블록 수</th><th>고급 무선 터미널 범위</th></tr></thead>
+      <tbody>
+        <tr><td>없음</td><td class="num">0</td><td>64블록</td></tr>
+        <tr><td>1단 (3×3)</td><td class="num">9</td><td>같은 차원 어디서나</td></tr>
+        <tr><td>2단 (+5×5)</td><td class="num">34</td><td>같은 차원 어디서나</td></tr>
+        <tr><td>3단 (+7×7)</td><td class="num">83</td><td>같은 차원 어디서나</td></tr>
+        <tr class="hl"><td>4단 (+9×9)</td><td class="num">164</td><td><b>다른 차원에서도</b> (네더, 엔드, 에테르, 황혼의 숲...)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="pyr" id="pyr" aria-hidden="true"></div>
+    <ul>
+      <li>피라미드에는 철·금·에메랄드·다이아몬드·네더라이트 블록을 섞어 써도 됩니다. 164개는 철 블록만으로도 철 주괴 1,476개입니다.</li>
+      <li>신호기 빛 기둥이 하늘로 올라가고 있어야 인식합니다. 신호기 위를 막지 마세요.</li>
+      <li>필요한 층수는 서버 설정 <code>wirelessTermBeaconLvl</code>(기본 1)과 <code>wirelessTermBeaconLvlDim</code>(기본 4)입니다. 서버 관리자가 바꿨으면 표가 달라집니다.</li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="s5">
+    <h2 id="s5"><span class="n">5</span>청크 로딩 (서버에서 제일 중요)</h2>
+    <div class="warn"><p>고급 무선 터미널은 <b>묶인 터미널이 있는 청크가 로드되어 있을 때만</b> 열립니다. 상자들이 있는 청크도 로드되어 있어야 내용물이 보입니다. 기지에서 멀리 가거나 다른 차원으로 가면 기지 청크가 내려가서 "터미널 범위 벗어남"이 뜹니다.</p></div>
+    <p>이 팩에는 <b>Open Parties and Claims</b>가 있어서 차지한 청크를 강제 로드할 수 있습니다.</p>
+    <ol>
+      <li>Xaero 월드맵(<kbd>M</kbd>)을 열고 기지 청크를 우클릭해서 <b>차지(Claim)</b>합니다.</li>
+      <li>같은 청크를 다시 우클릭해서 <b>강제 로드(Forceload)</b>를 켭니다. 지도에서 강제 로드 표시가 붙으면 됩니다.</li>
+      <li>터미널, 신호기, 상자들이 들어 있는 청크를 전부 이렇게 합니다.</li>
+    </ol>
+    <ul>
+      <li>이 서버 설정 기준으로 플레이어 한 명이 강제 로드할 수 있는 청크는 <b>10개</b>입니다(<code>maxPlayerClaimForceloads</code>). 창고를 청크 1~2개 안에 몰아 지으면 넉넉합니다.</li>
+      <li>강제 로드는 기본으로 <b>내가 접속해 있을 때만</b> 유지됩니다. 내가 접속해서 터미널을 쓰는 동안에는 문제없습니다.</li>
+      <li>청크 경계는 <kbd>F3</kbd> + <kbd>G</kbd>로 볼 수 있습니다.</li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="s6">
+    <h2 id="s6"><span class="n">6</span>다른 방법: 인벤토리 링크</h2>
+    <p>고급 무선 터미널 대신 <b>창고 네트워크 두 개를 원격으로 잇는</b> 방법도 있습니다. 다른 차원 전초기지에 터미널이나 호퍼를 두고 본진 창고를 그대로 쓰고 싶을 때 좋고, 필요한 신호기가 더 작습니다.</p>
+    <ol>
+      <li>본진 쪽: 창고 네트워크(케이블)에 <b>인벤토리 케이블 커넥터</b>를 달고, 커넥터의 앞면이 <b>신호기</b>를 바라보게 놓습니다.</li>
+      <li>커넥터를 우클릭하면 "인벤토리 링크" 화면이 뜹니다. 채널을 만들고 공용/개인을 고릅니다.</li>
+      <li>전초기지 쪽도 똑같이 케이블 커넥터를 신호기에 붙이고 같은 채널을 고릅니다. 이제 전초기지 네트워크의 터미널에 본진 아이템이 보입니다.</li>
+    </ol>
+    <div class="tw"><table>
+      <thead><tr><th>커넥터가 바라보는 신호기</th><th>연결 범위</th></tr></thead>
+      <tbody>
+        <tr><td>신호기 블록만 (피라미드 없음)</td><td>4096블록</td></tr>
+        <tr><td>1단</td><td>같은 차원 어디서나</td></tr>
+        <tr class="hl"><td>2단 (광물 블록 34개)</td><td><b>다른 차원과도</b></td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li>여기서도 <b>양쪽 청크가 모두 로드되어</b> 있어야 합니다. 본진은 5번처럼 강제 로드하세요.</li>
+      <li>양쪽 신호기 모두 필요한 층수를 맞춰 두는 게 안전합니다.</li>
+      <li>개인 채널은 만든 사람만 씁니다. 다른 사람이 접근하면 "접근 거부됨"이 뜹니다.</li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="s7">
+    <h2 id="s7"><span class="n">7</span>"거의 무한"으로 늘리기</h2>
+    <p>Tom's Simple Storage는 저장 공간을 따로 만들지 않고 <b>상자들을 묶어 주는</b> 모드입니다. 그래서 용량 = 연결한 보관함의 합이고, 상자를 더 붙이는 만큼 계속 늘어납니다.</p>
+    <div class="tw"><table>
+      <thead><tr><th>보관함</th><th class="num">칸</th><th class="num">최대 개수 (64개짜리 아이템)</th><th>메모</th></tr></thead>
+      <tbody>
+        <tr><td>상자 / 통</td><td class="num">27</td><td class="num">1,728</td><td>제일 싸고 무난</td></tr>
+        <tr><td>큰 상자</td><td class="num">54</td><td class="num">3,456</td><td></td></tr>
+        <tr><td>서류 캐비닛 (Tom's)</td><td class="num">512</td><td class="num">아이템 512개</td><td>안 겹쳐지는 아이템 <b>한 종류</b> 전용. 인챈트 책, 물약, 도구 정리에 좋음</td></tr>
+        <tr><td>네더 상자 (Nether Chested)</td><td class="num">54</td><td class="num">27,648</td><td>칸마다 8배(512개)까지 쌓임. 아래 주의 참고</td></tr>
+      </tbody>
+    </table></div>
+    <ul>
+      <li><b>범위 늘리기:</b> 커넥터에서 16블록 넘게 쌓고 싶으면 케이블로 다른 상자 덩어리까지 이어 가세요(최대 케이블 2048개). 덩어리마다 케이블 커넥터 하나씩입니다.</li>
+      <li><b>자동 정리:</b> <b>기본 인벤토리 호퍼</b>로 네트워크에 아이템을 넣고 빼고, 케이블 커넥터에 <b>인벤토리 설정기</b>나 필터를 걸어 "광석은 이 상자들로" 같은 분류를 할 수 있습니다.</li>
+      <li><b>레벨 측정기</b>는 창고 속 특정 아이템 수가 정한 값보다 많거나 적을 때 레드스톤 신호를 냅니다. 농장 자동 정지 같은 데 씁니다.</li>
+    </ul>
+    <div class="warn"><p><b>네더 상자 주의:</b> 이 팩 설정에서 네더 상자를 <b>네더 차원에서 열면 폭발</b>합니다(위력 5). 오버월드 기지에만 두세요. 또 칸당 64개를 넘는 상자라서 Tom's 터미널에서 수량이 제대로 보이고 들어가는지는 확인하지 못했습니다. 큰 창고에 섞기 전에 한두 개로 먼저 시험해 보세요.</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="faq">
+    <h2 id="faq">막힐 때</h2>
+    <div class="tw"><table>
+      <thead><tr><th>증상</th><th>원인과 해결</th></tr></thead>
+      <tbody>
+        <tr><td>"터미널 범위 벗어남"</td><td>64블록 밖이거나, 신호기 층수가 모자라거나(다른 차원은 4단), 기지 청크가 로드되지 않았습니다. 신호기가 터미널 8블록 안에 있는지, 빛 기둥이 나오는지, 청크가 강제 로드인지 확인하세요.</td></tr>
+        <tr><td>"유효하지 않은 블록"</td><td>터미널이 아닌 블록에 웅크리기 우클릭을 했습니다. 저장 터미널이나 제작 터미널에 대고 묶으세요.</td></tr>
+        <tr><td>터미널은 열리는데 텅 비어 있음</td><td>상자 쪽 청크가 로드되지 않았거나, 터미널이 커넥터와 이어져 있지 않습니다. 상자가 있는 청크도 강제 로드하세요.</td></tr>
+        <tr><td>"저장 시스템에 루프가 있음"</td><td>커넥터끼리 서로 이어졌습니다. 네트워크 하나에 인벤토리 커넥터는 하나만 두세요.</td></tr>
+        <tr><td>"접근 거부됨"</td><td>남의 개인 채널에 연결하려 했습니다. 채널 주인에게 공용으로 바꿔 달라고 하세요.</td></tr>
+        <tr><td>표의 숫자와 다르게 동작함</td><td>서버 설정(<code>toms_storage-server.toml</code>)이 기본값과 다를 수 있습니다. 서버 관리자에게 물어보세요.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <footer>
+    <p>기준: Tom's Simple Storage 2.4.2, Nether Chested 21.1.1, Open Parties and Claims · Minecraft 1.21.1. 서버 설정은 이 팩의 기본값입니다.</p>
+    <p><a class="home" href="../">첫 화면으로</a></p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  const c=document.getElementById("ground"), x=c.getContext("2d");
+  let seed=11; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const G=["#5f9a2c","#6fae35","#4f8424"], D=["#8a5a33","#7a4e2b","#9c6a3d","#6b4325"];
+  for(let i=0;i<320;i++){const h=3+Math.floor(rnd()*3);
+    for(let y=0;y<16;y++){x.fillStyle=y<h?G[Math.floor(rnd()*3)]:D[Math.floor(rnd()*4)];x.fillRect(i,y,1,1);}}
+
+  // Recipes, read from the mod's data/*/recipe/*.json (shaped patterns; "" = empty slot)
+  const R=[
+    {n:"인벤토리 커넥터",c:1,g:["판자","비교기","판자","상자","다이아","상자","판자","엔더 진주","판자"]},
+    {n:"저장 터미널",c:1,g:["판자","비교기","판자","상자","발광석","유리","판자","비교기","판자"]},
+    {n:"제작 터미널",c:1,g:["제작대","다이아","제작대","다이아","저장 터미널","다이아","제작대","다이아","제작대"]},
+    {n:"무선 터미널",c:1,g:["판자","비교기","판자","망원경","발광석","유리","판자","엔더 진주","판자"]},
+    {n:"고급 무선 터미널",c:1,smith:["강화 형판","무선 터미널","네더 주괴"],note:"대장장이 작업대"},
+    {n:"인벤토리 트림",c:2,g:["판자","막대기","판자","막대기","상자","막대기","판자","막대기","판자"]},
+    {n:"인벤토리 케이블",c:6,g:["막대기","판자","막대기","다락문","상자","다락문","막대기","판자","막대기"]},
+    {n:"인벤토리 케이블 커넥터",c:1,g:["","석영","판자","케이블","상자","엔더 진주","","다이아","판자"]},
+    {n:"서류 캐비닛",c:1,g:["매끈한 돌","상자","매끈한 돌","철 주괴","상자","철 주괴","매끈한 돌","상자","매끈한 돌"]},
+    {n:"기본 인벤토리 호퍼",c:1,g:["판자","케이블","판자","","호퍼","","","",""]},
+    {n:"네더 상자",c:1,g:["네더 파편","네더 벽돌","네더 파편","네더 벽돌","상자","네더 벽돌","네더 파편","네더 벽돌","네더 파편"],note:"Nether Chested"},
+  ];
+  const box=document.getElementById("rcp");
+  for(const r of R){
+    const d=document.createElement("div"); d.className="rc";
+    const t=document.createElement("div"); t.className="t";
+    const b=document.createElement("b"); b.textContent=r.n; t.append(b);
+    const s=document.createElement("span"); s.textContent="×"+r.c; t.append(s); d.append(t);
+    const gr=document.createElement("div"); gr.className="grid";
+    for(const it of (r.smith||r.g)){const q=document.createElement("div"); q.className="s"; q.textContent=it; if(it) q.title=it; gr.append(q);}
+    d.append(gr);
+    if(r.note){const p=document.createElement("p"); p.className="legend"; p.textContent=r.note; d.append(p);}
+    box.append(d);
+  }
+
+  // Beacon pyramids, side view: one row per tier, beacon on top
+  const P=document.getElementById("pyr");
+  const ORE=["#d8d8d8","#f2d24b","#4fd6c5","#52c25a"];
+  for(let lv=1;lv<=4;lv++){
+    const w=lv*2+1, cv=document.createElement("canvas"); cv.width=9; cv.height=lv+2;
+    const g=cv.getContext("2d");
+    g.fillStyle="#6fe0ff"; g.fillRect(4,0,1,1);           // beam
+    g.fillStyle="#9be8f0"; g.fillRect(4,1,1,1);           // beacon
+    for(let t=1;t<=lv;t++){const ww=t*2+1; g.fillStyle=ORE[(t-1)%4]; g.fillRect(4-t,t+1,ww,1);}
+    cv.style.height="calc(var(--u)*"+cv.height+")"; cv.style.width="calc(var(--u)*9)";
+    const f=document.createElement("figure"), cap=document.createElement("figcaption");
+    cap.textContent=lv+"단\n"+[9,34,83,164][lv-1]+"개"; f.append(cv,cap); P.append(f);
+  }
+})();
+</script>

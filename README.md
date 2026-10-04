@@ -9,12 +9,14 @@ docs/                  배포되는 사이트 (빌드 결과물, 직접 고치�
   index.html           위키 첫 화면 (도감 고르기)
   mobs/index.html      몹 사육 도감
   gear/index.html      장비·인챈트 도감
+  storage/index.html   원격 창고 가이드 (Tom's Simple Storage)
   assets/fonts/        마인크래프트 글리프로 만든 픽셀 폰트
 tools/
   build_site.py        페이지 조립 + 폰트 생성 → docs/
   jdis.py              클래스 파일 디스어셈블러 (모드 코드 확인용, JDK 불필요)
   render/              몹 렌더러: 모델 코드를 실행하는 작은 JVM 해석기(jvm.py) + 소프트웨어 래스터라이저
   home.html            첫 화면 원본
+  storage.html         원격 창고 가이드 원본 (손으로 쓴 글, 데이터 추출 없음)
   mobs/                몹 사육 도감 원본과 데이터 추출 스크립트
   gear/                장비·인챈트 도감 원본과 데이터 추출 스크립트
     stats.py           아이템 등록 코드를 실행해서 공격력·공격 속도·방어력·내구도를 읽음 (gearvm.py가 render/jvm.py를 확장)

@@ -27,6 +27,7 @@ PAGES = [
     (load("home.html").replace("__GEAR_N__", str(len(_gear["items"]))).replace("__ENCH_N__", str(len(_gear["ench"]))), "index.html"),
     (data_page("mobs/template.html", "mobs/wiki.json"), "mobs/index.html"),
     (data_page("gear/template.html", "gear/wiki.json"), "gear/index.html"),
+    (load("storage.html"), "storage/index.html"),
 ]
 
 # characters that can appear on screen
