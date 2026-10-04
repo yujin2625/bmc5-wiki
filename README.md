@@ -11,6 +11,7 @@ docs/                  배포되는 사이트 (빌드 결과물, 직접 고치�
   assets/fonts/        마인크래프트 글리프로 만든 픽셀 폰트
 tools/
   build_site.py        페이지 조립 + 폰트 생성 → docs/
+  jdis.py              클래스 파일 디스어셈블러 (모드 코드 확인용, JDK 불필요)
   home.html            첫 화면 원본
   mobs/                몹 사육 도감 원본과 데이터 추출 스크립트
 .github/workflows/     main에 push하면 Pages로 자동 배포
@@ -25,6 +26,7 @@ CurseForge가 설치된 이 PC에서 실행해야 합니다. 경로가 다르면
 # 모드가 바뀌었을 때만: 모드 jar에서 번식/길들이기 데이터 다시 뽑기
 python tools/mobs/extract.py
 python tools/mobs/build_data.py
+python tools/mobs/eggs.py      # 스폰 알 색상(몹 그림)을 모드 코드에서 추출
 
 # 사이트 빌드
 python tools/build_site.py

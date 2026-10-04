@@ -43,8 +43,8 @@ img{image-rendering:pixelated}
 .px{ /* notched pixel frame */
   clip-path:polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));
 }
-header.hero{position:relative;margin-inline:-16px;padding-inline:16px}
-#ground{display:block;width:100%;height:64px;image-rendering:pixelated}
+header.hero{position:relative;padding-inline:16px}
+#ground{display:block;width:calc(100% + 32px);margin-inline:-16px;height:64px;image-rendering:pixelated}
 .hero-inner{max-width:1180px;margin:0 auto;padding-block:28px 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 32px}
 .hero h1{margin:0;font-size:32px;line-height:40px;font-weight:normal;color:var(--paper);text-shadow:4px 4px 0 var(--edge);text-wrap:balance}
 .hero h1 b{color:var(--gold);font-weight:normal}
@@ -56,7 +56,7 @@ header.hero{position:relative;margin-inline:-16px;padding-inline:16px}
 .stat{background:var(--edge);color:var(--gold);padding:4px 12px;font-variant-numeric:tabular-nums}
 .stat span{color:var(--paper)}
 
-.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:12px;margin-inline:-16px;padding-inline:16px;
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:12px;padding-inline:16px;
   background:color-mix(in srgb,var(--plank) 92%,transparent);border-bottom:4px solid var(--edge)}
 .bar-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
 .search{display:flex;align-items:center;background:var(--field);border:4px solid var(--field-edge);outline:4px solid var(--edge);padding:8px 12px;gap:10px}
@@ -73,28 +73,86 @@ header.hero{position:relative;margin-inline:-16px;padding-inline:16px}
 .chip img{width:16px;height:16px}
 .row-label{color:var(--paper);text-shadow:2px 2px 0 var(--edge);margin-right:4px;align-self:center}
 
-.count{margin:20px 0 12px;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:20px;align-items:start}
-.card{background:var(--paper);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);border:4px solid var(--edge);padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
-.card h2{margin:0;font-size:16px;font-weight:normal;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
-.card h2 .ko{font-size:32px;line-height:36px}
-.card h2 .en{color:var(--ink-soft)}
-.mod{align-self:flex-start;font-size:16px;color:var(--paper);background:var(--ink-soft);padding:0 8px}
+
+/* ---- views: 전체 / 즐겨찾기 / user lists ---- */
+.views{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chip.view[aria-pressed="true"]{background:var(--gold);color:#2a170a;box-shadow:inset 4px 4px 0 color-mix(in srgb,#fff 40%,var(--gold)),inset -4px -4px 0 color-mix(in srgb,#000 25%,var(--gold)),0 0 0 4px var(--edge)}
+.chip .n{font-variant-numeric:tabular-nums;opacity:.8}
+.newlist{display:inline-flex;gap:8px;align-items:center;margin:4px}
+.newlist input,.list-head input{font:inherit;background:var(--field);color:var(--field-fg);border:4px solid var(--field-edge);padding:2px 8px;width:12em;max-width:50vw}
+.newlist input:focus,.list-head input:focus{border-color:#fff;outline:0}
+.filters summary{cursor:pointer;color:var(--paper);text-shadow:2px 2px 0 var(--edge);list-style:none;display:inline-flex;gap:8px;align-items:center}
+.filters summary::-webkit-details-marker{display:none}
+.filters summary::before{content:"▶";font-size:16px}
+.filters[open] summary::before{content:"▼"}
+.filters summary:focus-visible{outline:4px solid var(--gold)}
+.filters .chips{margin-top:6px}
+
+.list-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:20px 0 0;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.list-head h2{margin:0;font-size:32px;line-height:40px;font-weight:normal}
+.btn{font:inherit;cursor:pointer;color:var(--ink);background:var(--paper-2);border:0;padding:2px 10px;text-shadow:none;
+  box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),0 0 0 4px var(--edge);margin:4px}
+.btn:hover{filter:brightness(1.08)}
+.btn:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+.btn.danger{background:var(--red);color:#fff;box-shadow:inset 4px 4px 0 color-mix(in srgb,#fff 30%,var(--red)),inset -4px -4px 0 color-mix(in srgb,#000 30%,var(--red)),0 0 0 4px var(--edge)}
+
+/* ---- uniform cards ---- */
+.count{margin:16px 0 12px;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px}
+.card{position:relative;height:248px;min-width:0;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo)}
+.card:hover{filter:brightness(1.05)}
+.card .open{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;height:100%;padding:12px 12px 10px;text-align:center}
+.card .open:focus-visible{outline:4px solid var(--gold);outline-offset:-8px}
+.portrait{width:64px;height:64px;image-rendering:pixelated;flex:none;margin-top:4px}
+.card .ko{font-size:16px;line-height:24px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .en{color:var(--ink-soft);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px;line-height:20px}
+.card .mod{align-self:center;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .kinds{display:flex;gap:4px;height:16px;justify-content:center}
+.card .kinds img{width:16px;height:16px}
+.card .feed{display:flex;gap:4px;margin-top:auto;height:36px;align-items:center;justify-content:center}
+.card .feed img,.card .feed .noimg{width:32px;height:32px;padding:2px;box-sizing:content-box;background:var(--slot-bg);box-shadow:inset 2px 2px 0 var(--slot-dk),inset -2px -2px 0 var(--slot-hi);object-fit:cover;object-position:top}
+.card .feed .plus{color:var(--ink-soft)}
+.star{position:absolute;top:6px;right:6px;z-index:1;font:inherit;cursor:pointer;background:transparent;border:0;padding:4px;line-height:0}
+.star img{width:24px;height:24px;image-rendering:pixelated}
+.star:focus-visible{outline:4px solid var(--gold)}
+.star[aria-pressed="false"] img{opacity:.35;filter:grayscale(1)}
+.star:hover img{opacity:1;filter:none}
+
+.mod{font-size:16px;color:#fff;background:var(--ink-soft);padding:0 8px}
 .mod[data-m="minecraft"]{background:var(--grass-dk)}
 .mod[data-m="alexsmobs"]{background:#9a5b2a}
-.mod[data-m="aether"],.mod[data-m="deep_aether"]{background:var(--sky)}
-.mod[data-m="dmr"]{background:var(--red)}
+.mod[data-m="aether"],.mod[data-m="deep_aether"]{background:#4f7fb8}
+.mod[data-m="dmr"]{background:#b2412c}
 .mod[data-m="twilightforest"]{background:#3f6a52}
 .mod[data-m="friendsandfoes"]{background:#8a6a1e}
 .mod[data-m="vanillabackport"]{background:#6b5a8e}
+
+/* ---- detail dialog ---- */
+dialog#detail{padding:0;border:4px solid var(--edge);background:var(--paper);color:var(--ink);width:min(720px,calc(100vw - 32px));max-height:calc(100dvh - 32px);
+  box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),8px 8px 0 rgba(0,0,0,.45)}
+dialog#detail::backdrop{background:rgba(20,10,4,.6)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 40px)}
+.dlg-head{display:flex;gap:16px;align-items:center;padding:16px;border-bottom:4px solid var(--paper-2)}
+.dlg-head .portrait{width:64px;height:64px;margin:0}
+.dlg-head h2{margin:0;font-size:32px;line-height:36px;font-weight:normal}
+.dlg-head .en{color:var(--ink-soft)}
+.dlg-head .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.dlg-head .star{position:static}
+.dlg-body{overflow:auto;padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.close{font:inherit;cursor:pointer;background:var(--paper-2);border:0;color:var(--ink);width:36px;height:36px;box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),0 0 0 4px var(--edge);align-self:flex-start}
+.close:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+.save{background:var(--paper-2);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.save .row{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+.save label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.save input[type=checkbox]{width:16px;height:16px;accent-color:var(--grass)}
+.save .hint{color:var(--ink-soft)}
 .sec{border-top:4px dashed var(--paper-2);padding-top:10px;display:flex;flex-direction:column;gap:8px}
 .sec-h{display:flex;align-items:center;gap:8px;color:var(--ink)}
 .sec-h img{width:16px;height:16px}
 .sec-h b{font-weight:normal}
 .req{color:var(--red)}
 .items{display:flex;flex-wrap:wrap;gap:6px}
-.it{display:inline-flex;align-items:center;gap:6px;background:var(--slot-bg);color:#1f1f1f;padding:2px 8px 2px 2px;
-  box-shadow:inset 2px 2px 0 var(--slot-dk),inset -2px -2px 0 var(--slot-hi)}
+.it{display:inline-flex;align-items:center;gap:6px;background:var(--slot-bg);color:#1f1f1f;padding:2px 8px 2px 2px;box-shadow:inset 2px 2px 0 var(--slot-dk),inset -2px -2px 0 var(--slot-hi)}
 :root[data-theme="dark"] .it{color:#f0f0f0}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .it{color:#f0f0f0}}
 .it img{width:32px;height:32px;object-fit:cover;object-position:top}
@@ -104,14 +162,13 @@ header.hero{position:relative;margin-inline:-16px;padding-inline:16px}
 .note{margin:0;color:var(--ink-soft);max-width:65ch}
 .extra{color:var(--ink-soft)}
 .egg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.empty{background:var(--paper);border:4px solid var(--edge);padding:32px 16px;text-align:center}
+
+.empty{grid-column:1/-1;background:var(--paper);border:4px solid var(--edge);padding:32px 16px;text-align:center}
 footer{margin-top:32px;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);padding:16px;display:grid;gap:8px}
 footer p{margin:0;max-width:80ch}
 footer b{font-weight:normal;color:var(--grass-dk)}
-mark{background:var(--gold);color:#2a170a}
-@media (prefers-reduced-motion:no-preference){.card{animation:pop .18s steps(3) both}}
-@keyframes pop{from{transform:translateY(4px)}to{transform:none}}
-@media (max-width:520px){.hero h1{font-size:32px}.card h2 .ko{font-size:32px}}
+@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{height:236px}.card .open{padding:10px 6px}.card .feed{gap:2px}.card .feed img,.card .feed .noimg{width:24px;height:24px}}
+.card .feed{max-width:100%;overflow:hidden}
 </style>
 
 <header class="hero">
@@ -120,7 +177,7 @@ mark{background:var(--gold);color:#2a170a}
     <div>
       <a class="back" href="../">◀ BMC5 위키</a>
       <h1>BMC5 <b>몹 사육 도감</b></h1>
-      <p>Better MC 5에 들어 있는 몹을 길들이고 번식시키는 방법을 모았습니다. 몹 이름이나 먹이 아이템 이름으로 찾아보세요.</p>
+      <p>Better MC 5에 들어 있는 몹을 길들이고 번식시키는 방법을 모았습니다. 카드를 누르면 자세한 방법이 나오고, 별표와 리스트로 자주 보는 몹을 모아 둘 수 있습니다.</p>
     </div>
     <div class="stats" id="stats"></div>
   </div>
@@ -129,27 +186,33 @@ mark{background:var(--gold);color:#2a170a}
 <div class="bar">
   <div class="bar-inner">
     <div class="search px"><label for="q">검색</label><input id="q" type="search" placeholder="예: 늑대, 밀, 바나나, dragon" autocomplete="off"></div>
-    <div class="chips" id="kinds" role="group" aria-label="방법"><span class="row-label">방법</span></div>
-    <div class="chips" id="mods" role="group" aria-label="모드"><span class="row-label">모드</span></div>
+    <div class="views" id="views" role="group" aria-label="보기"></div>
+    <details class="filters" id="filters">
+      <summary>필터</summary>
+      <div class="chips" id="kinds" role="group" aria-label="방법"><span class="row-label">방법</span></div>
+      <div class="chips" id="mods" role="group" aria-label="모드"><span class="row-label">모드</span></div>
+    </details>
   </div>
 </div>
 
 <main class="wrap">
+  <div id="listhead"></div>
   <div class="count" id="count" aria-live="polite"></div>
   <div class="grid" id="grid"></div>
   <footer>
-    <p><b>데이터 출처</b> 이 모드팩에 설치된 Just Enough Breeding 모드의 레시피 데이터와 각 모드의 아이템 태그를 직접 읽어서 만들었습니다. 길들이기 확률, 조건, 특수한 방법은 바닐라와 각 모드의 실제 코드와 이 서버의 설정 파일을 읽어서 확인했습니다.</p>
+    <p><b>데이터 출처</b> 이 모드팩에 설치된 Just Enough Breeding 모드의 레시피 데이터와 각 모드의 아이템 태그를 직접 읽어서 만들었습니다. 길들이기 확률, 조건, 특수한 방법은 바닐라와 각 모드의 실제 코드와 이 서버의 설정 파일을 읽어서 확인했습니다. 몹 그림은 각 몹의 스폰 알입니다.</p>
+    <p><b>즐겨찾기와 리스트</b> 별표와 리스트는 지금 쓰는 브라우저에만 저장됩니다. 다른 기기나 브라우저에서는 따로 만들어야 합니다.</p>
     <p><b>게임 안에서 확인</b> EMI에서 몹의 먹이 아이템을 찾아 사용처(U)를 보면 번식과 길들이기 탭이 나옵니다. 서버에 데이터팩이 따로 있으면 먹이가 이 문서와 다를 수 있습니다.</p>
-    <p><b>우리에 담아 옮기기</b> Supplementaries 우리로 새끼 몹과 작은 몹을 담아 옮길 수 있습니다. 새끼를 번식시켜 옮기면 편합니다.</p>
   </footer>
 </main>
 
+<dialog id="detail" aria-labelledby="dlg-title"></dialog>
+
 <script>
 const DATA = /*__DATA__*/;
+const EGGS = /*__EGGS__*/;
 const KINDS = ["길들이기","번식","신뢰","알","부화","새끼 키우기","복제","소환"];
-const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house","새끼 키우기":"sprout","회복":"heart","포획":"bucket","폭발":"tnt","블록 먹이기":"block"};
-
-// ---- pixel sprites drawn to canvas -> data URLs ----
+const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house","새끼 키우기":"sprout","회복":"heart","포획":"bucket","폭발":"tnt","블록 먹이기":"block","타기":"star"};
 const PAL = {k:"#2a170a",r:"#d8332a",R:"#ff8a7a",w:"#f4efe0",W:"#c9c0a8",y:"#f4c542",Y:"#c78a12",e:"#f2ead2",E:"#cfc29b",s:"#9ad04a",o:"#e07a1f",O:"#a84f0c",g:"#4a8a2a",b:"#7a5230",B:"#5a3a1e",p:"#d86fd0",P:"#a03a98"};
 const SPR = {
  heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."],
@@ -164,6 +227,7 @@ const SPR = {
  block:["bbbbbbbb","bBbbbbBb","bbbBbbbb","bbbbbbBb","bBbbbbbb","bbbbBbbb","bbBbbbBb","bbbbbbbb"],
  house:["...bb...","..bbbb..",".bbbbbb.","bbbbbbbb",".wWwwBw.",".wwwwBw.",".wwwwBw.",".BBBBBB."]
 };
+SPR.bigstar = ["...kk...","..kyyk..","kkkyykkk","kyyyYyyk",".kyYYyk.","..kyyk..",".kyykyyk","kkk..kkk"];
 function sprite(name){
   const rows=SPR[name], c=document.createElement("canvas"); c.width=8;c.height=8;
   const x=c.getContext("2d");
@@ -171,6 +235,33 @@ function sprite(name){
   return c.toDataURL();
 }
 const SP = {}; for (const k in SPR) SP[k]=sprite(k);
+
+// ---- spawn egg portraits: tint the vanilla template + overlay, like the game does ----
+const eggCache = {};
+function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});}
+let EGG_BASE=null;
+async function prepEggs(){
+  const [t,o]=await Promise.all([loadImg(EGGS.template),loadImg(EGGS.overlay)]);
+  const read=img=>{const c=document.createElement("canvas");c.width=16;c.height=16;const x=c.getContext("2d");x.drawImage(img,0,0);return x.getImageData(0,0,16,16);};
+  EGG_BASE={t:read(t),o:read(o)};
+}
+function eggURL(id){
+  if(eggCache[id]) return eggCache[id];
+  if(EGGS.pngs[id]) return eggCache[id]=EGGS.pngs[id];
+  const col=EGGS.colors[id]; if(!col||!EGG_BASE) return "";
+  const c=document.createElement("canvas");c.width=16;c.height=16;const x=c.getContext("2d");
+  const out=x.createImageData(16,16);
+  const layers=[[EGG_BASE.t,col[0]],[EGG_BASE.o,col[1]]];
+  for(const [img,rgb] of layers){
+    const r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
+    for(let i=0;i<img.data.length;i+=4){
+      const a=img.data[i+3]; if(!a) continue;
+      out.data[i]=img.data[i]*r/255; out.data[i+1]=img.data[i+1]*g/255; out.data[i+2]=img.data[i+2]*b/255; out.data[i+3]=a;
+    }
+  }
+  x.putImageData(out,0,0);
+  return eggCache[id]=c.toDataURL();
+}
 
 // ---- grass strip ----
 (function(){
@@ -184,11 +275,25 @@ const SP = {}; for (const k in SPR) SP[k]=sprite(k);
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const state={q:"",kinds:new Set(),mods:new Set(),open:new Set()};
+const BY_ID = Object.fromEntries(DATA.mobs.map(m=>[m.id,m]));
+const state={q:"",kinds:new Set(),mods:new Set(),open:new Set(),view:"all",confirmDelete:false,creating:false,detail:null};
+
+// ---- saved stars & lists (this browser only) ----
+const STORE_KEY="bmc5-mob-lists-v1";
+let store={fav:[],lists:[]};
+try{const raw=localStorage.getItem(STORE_KEY); if(raw){const s=JSON.parse(raw); if(s&&Array.isArray(s.fav)&&Array.isArray(s.lists)) store=s;}}catch(e){}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(store));}catch(e){}}
+const isFav=id=>store.fav.includes(id);
+function toggleFav(id){store.fav=isFav(id)?store.fav.filter(x=>x!==id):[...store.fav,id];save();}
+function listById(lid){return store.lists.find(l=>l.id===lid);}
+function toggleInList(lid,id){const l=listById(lid); if(!l) return; l.items=l.items.includes(id)?l.items.filter(x=>x!==id):[...l.items,id]; save();}
+function createList(name){const id="l"+Date.now().toString(36); store.lists.push({id,name,items:[]}); save(); return id;}
 
 // search index
 for(const m of DATA.mobs){
   m._txt=[m.n,m.en,m.id,DATA.mods[m.m],m.q,...m.s.flatMap(s=>[s.k,s.note||"",s.req||"",...s.items.map(i=>i[0]),...(s.extra||[]).map(i=>i[0]),...(s.egg?[s.egg[0]]:[])])].join(" ").toLowerCase();
+  const first=m.s.find(s=>s.items.length&&!s.no);
+  m._feed=first?first.items:[];
 }
 
 function chips(){
@@ -197,16 +302,53 @@ function chips(){
   const kd=$("#kinds");
   for(const k of KINDS){ if(!counts[k])continue;
     const b=document.createElement("button"); b.className="chip"; b.type="button"; b.id="k-"+k; b.setAttribute("aria-pressed","false");
-    b.innerHTML=`<img alt="" src="${SP[KIND_ICON[k]]}">${k} <span>${counts[k]}</span>`;
-    b.onclick=()=>{toggle(state.kinds,k,b)}; kd.appendChild(b);}
+    b.innerHTML=`<img alt="" src="${SP[KIND_ICON[k]]}">${k} <span class="n">${counts[k]}</span>`;
+    b.onclick=()=>toggleSet(state.kinds,k,b); kd.appendChild(b);}
   const md=$("#mods");
   for(const id of Object.keys(DATA.mods)){ if(!mc[id])continue;
     const b=document.createElement("button"); b.className="chip"; b.type="button"; b.id="m-"+id; b.setAttribute("aria-pressed","false");
-    b.textContent=`${DATA.mods[id]} ${mc[id]}`; b.onclick=()=>toggle(state.mods,id,b); md.appendChild(b);}
+    b.innerHTML=`${esc(DATA.mods[id])} <span class="n">${mc[id]}</span>`; b.onclick=()=>toggleSet(state.mods,id,b); md.appendChild(b);}
   const tame=DATA.mobs.filter(m=>m.t.includes("길들이기")||m.t.includes("부화")).length, br=DATA.mobs.filter(m=>m.t.includes("번식")).length;
   $("#stats").innerHTML=`<div class="stat px">몹 <span>${DATA.mobs.length}</span></div><div class="stat px">길들이기 <span>${tame}</span></div><div class="stat px">번식 <span>${br}</span></div>`;
 }
-function toggle(set,v,b){ set.has(v)?set.delete(v):set.add(v); b.setAttribute("aria-pressed",set.has(v)); render(); }
+function toggleSet(set,v,b){ set.has(v)?set.delete(v):set.add(v); b.setAttribute("aria-pressed",set.has(v)); render(); }
+
+function renderViews(){
+  const v=state.view;
+  let h=`<span class="row-label">보기</span>`;
+  h+=`<button type="button" class="chip view" data-view="all" aria-pressed="${v==="all"}">전체 <span class="n">${DATA.mobs.length}</span></button>`;
+  h+=`<button type="button" class="chip view" data-view="fav" aria-pressed="${v==="fav"}"><img alt="" src="${SP.bigstar}">즐겨찾기 <span class="n">${store.fav.length}</span></button>`;
+  for(const l of store.lists) h+=`<button type="button" class="chip view" data-view="${esc(l.id)}" aria-pressed="${v===l.id}">${esc(l.name)} <span class="n">${l.items.length}</span></button>`;
+  h+= state.creating
+    ? `<form class="newlist" id="newlist-form"><label class="row-label" for="newlist-name">새 리스트</label><input id="newlist-name" maxlength="24" placeholder="예: 집 농장용" required><button class="btn" type="submit">만들기</button><button class="btn" type="button" id="newlist-cancel">취소</button></form>`
+    : `<button type="button" class="chip" id="newlist-btn">+ 새 리스트</button>`;
+  $("#views").innerHTML=h;
+  if(state.creating){const i=$("#newlist-name"); i&&i.focus();}
+}
+$("#views").addEventListener("click",e=>{
+  const b=e.target.closest("[data-view]");
+  if(b){state.view=b.dataset.view; state.confirmDelete=false; renderViews(); render(); return;}
+  if(e.target.closest("#newlist-btn")){state.creating=true; renderViews(); return;}
+  if(e.target.closest("#newlist-cancel")){state.creating=false; renderViews();}
+});
+$("#views").addEventListener("submit",e=>{
+  e.preventDefault(); const name=$("#newlist-name").value.trim(); if(!name) return;
+  state.view=createList(name); state.creating=false; renderViews(); render();
+});
+
+function renderListHead(){
+  const el=$("#listhead"); const l=listById(state.view);
+  if(!l){el.innerHTML=""; return;}
+  el.innerHTML=`<div class="list-head"><h2>${esc(l.name)}</h2>
+    <form id="rename-form" style="display:contents"><label class="row-label" for="rename">이름 바꾸기</label><input id="rename" maxlength="24" value="${esc(l.name)}"><button class="btn" type="submit">저장</button></form>
+    ${state.confirmDelete?`<button class="btn danger" type="button" id="del-yes">리스트 삭제 확인</button><button class="btn" type="button" id="del-no">취소</button>`:`<button class="btn" type="button" id="del">리스트 삭제</button>`}</div>`;
+}
+$("#listhead").addEventListener("submit",e=>{e.preventDefault(); const l=listById(state.view); const v=$("#rename").value.trim(); if(l&&v){l.name=v; save(); renderViews(); renderListHead();}});
+$("#listhead").addEventListener("click",e=>{
+  if(e.target.id==="del"){state.confirmDelete=true; renderListHead();}
+  else if(e.target.id==="del-no"){state.confirmDelete=false; renderListHead();}
+  else if(e.target.id==="del-yes"){store.lists=store.lists.filter(l=>l.id!==state.view); save(); state.view="all"; state.confirmDelete=false; renderViews(); render();}
+});
 
 const LIMIT=8;
 function itemChip(i){
@@ -220,8 +362,25 @@ function itemList(list,key){
   if(list.length>LIMIT) h+=`<button class="more" type="button" data-k="${esc(key)}">${open?"접기":`+${list.length-LIMIT}개 더 보기`}</button>`;
   return h+"</div>";
 }
+function starBtn(m,cls=""){
+  const on=isFav(m.id);
+  return `<button type="button" class="star ${cls}" data-star="${esc(m.id)}" aria-pressed="${on}" aria-label="${esc(m.n)} 즐겨찾기${on?" 해제":""}" title="${on?"즐겨찾기 해제":"즐겨찾기"}"><img alt="" src="${SP.bigstar}"></button>`;
+}
 function card(m){
-  const secs=m.s.map((s,ix)=>{
+  const feed=m._feed.slice(0,3).map(i=>{const src=i[1]&&DATA.icons[i[1]]; return src?`<img alt="" title="${esc(i[0])}" src="${src}" loading="lazy">`:`<span class="noimg" title="${esc(i[0])}"></span>`;}).join("");
+  const more=m._feed.length>3?`<span class="plus">+${m._feed.length-3}</span>`:"";
+  const kinds=m.t.filter(t=>KIND_ICON[t]).map(t=>`<img alt="" title="${esc(t)}" src="${SP[KIND_ICON[t]]}">`).join("");
+  return `<article class="card">${starBtn(m)}
+    <button type="button" class="open" data-open="${esc(m.id)}" aria-label="${esc(m.n)} 자세히 보기">
+      <img class="portrait" alt="" src="${eggURL(m.id)}">
+      <span class="ko">${esc(m.n)}</span><span class="en">${esc(m.en)}</span>
+      <span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span>
+      <span class="kinds" aria-label="${esc(m.t.join(", "))}">${kinds}</span>
+      <span class="feed">${feed}${more}</span>
+    </button></article>`;
+}
+function sections(m){
+  return m.s.map((s,ix)=>{
     const key=m.id+"#"+ix;
     let h=`<div class="sec"><div class="sec-h"><img alt="" src="${SP[KIND_ICON[s.k]]||SP.star}"><b>${esc(s.k)}</b>${s.req?` <span class="req">· ${esc(s.req)}</span>`:""}</div>`;
     h+=itemList(s.items,key);
@@ -230,18 +389,66 @@ function card(m){
     if(s.note) h+=`<p class="note">${esc(s.note)}</p>`;
     return h+"</div>";
   }).join("");
-  return `<article class="card" id="${esc(m.id.replace(":","-"))}"><span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span><h2><span class="ko">${esc(m.n)}</span><span class="en">${esc(m.en)}</span></h2>${secs}</article>`;
 }
+function saveBox(m){
+  const boxes=store.lists.map(l=>`<label><input type="checkbox" data-list="${esc(l.id)}" ${l.items.includes(m.id)?"checked":""}>${esc(l.name)}</label>`).join("");
+  return `<div class="save"><div class="row"><b style="font-weight:normal">리스트에 저장</b>${boxes||`<span class="hint">아직 리스트가 없습니다.</span>`}</div>
+    <form class="row" id="dlg-new"><label for="dlg-newname" class="hint">새 리스트</label><input id="dlg-newname" maxlength="24" placeholder="리스트 이름" style="font:inherit;background:var(--field);color:var(--field-fg);border:4px solid var(--field-edge);padding:2px 8px;width:10em"><button class="btn" type="submit">만들고 저장</button></form></div>`;
+}
+function renderDetail(){
+  const m=BY_ID[state.detail]; const d=$("#detail"); if(!m) return;
+  d.innerHTML=`<div class="dlg"><div class="dlg-head"><img class="portrait" alt="" src="${eggURL(m.id)}">
+      <div class="who"><h2 id="dlg-title">${esc(m.n)}</h2><span class="en">${esc(m.en)}</span><span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span></div>
+      ${starBtn(m)}<button type="button" class="close" id="dlg-close" aria-label="닫기">X</button></div>
+    <div class="dlg-body">${saveBox(m)}${sections(m)}</div></div>`;
+}
+function openDetail(id,push=true){
+  if(!BY_ID[id]) return;
+  state.detail=id; renderDetail();
+  const d=$("#detail"); if(!d.open) d.showModal();
+  if(push) try{history.replaceState(null,"","#"+id.replace(":","-"));}catch(e){}
+}
+function closeDetail(){const d=$("#detail"); if(d.open) d.close(); try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
+$("#detail").addEventListener("cancel",()=>{try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}});
+$("#detail").addEventListener("close",()=>{if($("#detail").open) return; state.detail=null; render();});
+$("#detail").addEventListener("click",e=>{
+  if(e.target===e.currentTarget){closeDetail(); return;}   // backdrop
+  if(e.target.closest("#dlg-close")){closeDetail(); return;}
+  const mb=e.target.closest(".more"); if(mb){const k=mb.dataset.k; state.open.has(k)?state.open.delete(k):state.open.add(k); renderDetail(); return;}
+  const st=e.target.closest("[data-star]"); if(st){toggleFav(st.dataset.star); renderDetail(); renderViews(); return;}
+});
+$("#detail").addEventListener("change",e=>{const cb=e.target.closest("[data-list]"); if(cb){toggleInList(cb.dataset.list,state.detail); renderViews();}});
+$("#detail").addEventListener("submit",e=>{
+  e.preventDefault(); const i=$("#dlg-newname"); const name=i&&i.value.trim(); if(!name) return;
+  const lid=createList(name); toggleInList(lid,state.detail); renderDetail(); renderViews();
+});
+
 function render(){
   const q=state.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const list=DATA.mobs.filter(m=>
+  let pool=DATA.mobs, label="";
+  if(state.view==="fav"){pool=store.fav.map(id=>BY_ID[id]).filter(Boolean); label="즐겨찾기";}
+  else if(state.view!=="all"){const l=listById(state.view); if(!l){state.view="all";} else {pool=l.items.map(id=>BY_ID[id]).filter(Boolean); label=l.name;}}
+  renderListHead();
+  const list=pool.filter(m=>
     (!state.mods.size||state.mods.has(m.m)) &&
     (!state.kinds.size||[...state.kinds].every(k=>m.t.includes(k))) &&
     q.every(w=>m._txt.includes(w)));
-  $("#count").textContent=`${list.length}마리 표시 중`;
-  $("#grid").innerHTML=list.length?list.map(card).join(""):`<div class="empty px">찾는 몹이 없습니다. 다른 이름이나 먹이 아이템으로 검색해 보세요.</div>`;
+  $("#count").textContent=`${label?label+" · ":""}${list.length}마리`;
+  let empty="찾는 몹이 없습니다. 다른 이름이나 먹이 아이템으로 검색해 보세요.";
+  if(!pool.length&&state.view==="fav") empty="아직 즐겨찾기한 몹이 없습니다. 카드 오른쪽 위의 별을 누르면 여기에 모입니다.";
+  else if(!pool.length&&state.view!=="all") empty="이 리스트는 비어 있습니다. 몹 카드를 눌러 상세 화면의 '리스트에 저장'에서 추가하세요.";
+  $("#grid").innerHTML=list.length?list.map(card).join(""):`<div class="empty px">${empty}</div>`;
 }
-$("#grid").addEventListener("click",e=>{const b=e.target.closest(".more"); if(!b)return; const k=b.dataset.k; state.open.has(k)?state.open.delete(k):state.open.add(k); render();});
+$("#grid").addEventListener("click",e=>{
+  const st=e.target.closest("[data-star]"); if(st){toggleFav(st.dataset.star); renderViews(); render(); return;}
+  const op=e.target.closest("[data-open]"); if(op) openDetail(op.dataset.open);
+});
 let t; $("#q").addEventListener("input",e=>{clearTimeout(t); t=setTimeout(()=>{state.q=e.target.value; render();},80);});
-chips(); render();
+
+chips(); renderViews(); render();
+prepEggs().then(()=>{
+  render();
+  const h=decodeURIComponent(location.hash.slice(1)); const id=h.replace("-",":");
+  if(BY_ID[id]) openDetail(id,false);
+});
 </script>

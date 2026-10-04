@@ -20,9 +20,10 @@ def load(p):
 
 # (html fragment, output path under docs/) -- add new wiki pages here
 wiki = json.load(open(os.path.join(TOOLS, "mobs", "wiki.json"), encoding="utf-8"))
+eggs = open(os.path.join(TOOLS, "mobs", "eggs.json"), encoding="utf-8").read()
 PAGES = [
     (load("home.html"), "index.html"),
-    (load("mobs/template.html").replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":"))), "mobs/index.html"),
+    (load("mobs/template.html").replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":"))).replace("/*__EGGS__*/", eggs), "mobs/index.html"),
 ]
 
 # characters that can appear on screen
