@@ -1,0 +1,243 @@
+<title>BMC5 몹 사육 도감</title>
+<style>
+@font-face{font-family:"MCPixel";src:url(__FONT_URL__) format("truetype");font-display:block}
+/* Layout: plank-wood page, parchment "book" panels, inventory-slot item chips */
+:root{
+  --plank:#b8834a; --plank-line:#8f6232; --plank-hi:#c9965a;
+  --paper:#f4e4c1; --paper-2:#ead3a3; --ink:#3a2412; --ink-soft:#6e4a2a;
+  --edge:#2a170a; --hi:#fff6dc; --lo:#b48c55;
+  --grass:#5f9a2c; --grass-dk:#3f6e1a; --gold:#e9a628; --red:#b2412c; --sky:#4f7fb8;
+  --slot:#8b8b8b; --slot-dk:#373737; --slot-hi:#ffffff; --slot-bg:#c6c6c6;
+  --tip:#100010; --tip-edge:#2a0a5e; --tip-fg:#ffffff;
+  --field:#000000; --field-edge:#a0a0a0; --field-fg:#e0e0e0;
+  --font:"MCPixel","Malgun Gothic","Apple SD Gothic Neo",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a;
+  --grass:#86c447; --grass-dk:#5f9a2c; --gold:#ffc04d; --red:#e0664c; --sky:#86b2e8;
+  --slot:#5a5a5a; --slot-dk:#1e1e1e; --slot-hi:#8d8d8d; --slot-bg:#3c3c3c;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a;
+  --grass:#86c447; --grass-dk:#5f9a2c; --gold:#ffc04d; --red:#e0664c; --sky:#86b2e8;
+  --slot:#5a5a5a; --slot-dk:#1e1e1e; --slot-hi:#8d8d8d; --slot-bg:#3c3c3c;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:none;font-smooth:never}
+body{margin:0;font-family:var(--font);font-size:16px;line-height:24px;color:var(--ink);
+  background-color:var(--plank);
+  background-image:
+    linear-gradient(var(--plank-line) 0 4px,transparent 4px),
+    linear-gradient(90deg,transparent 0 60%,var(--plank-line) 60% calc(60% + 4px),transparent 0),
+    linear-gradient(90deg,transparent 0 20%,var(--plank-line) 20% calc(20% + 4px),transparent 0),
+    linear-gradient(var(--plank-hi) 0 4px,transparent 4px);
+  background-size:100% 64px,256px 64px,256px 64px,100% 64px;
+  background-position:0 0,0 0,128px 32px,0 8px;
+}
+img{image-rendering:pixelated}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:0 48px}
+.px{ /* notched pixel frame */
+  clip-path:polygon(0 4px,4px 4px,4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px));
+}
+header.hero{position:relative;margin-inline:-16px;padding-inline:16px}
+#ground{display:block;width:100%;height:64px;image-rendering:pixelated}
+.hero-inner{max-width:1180px;margin:0 auto;padding-block:28px 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 32px}
+.hero h1{margin:0;font-size:32px;line-height:40px;font-weight:normal;color:var(--paper);text-shadow:4px 4px 0 var(--edge);text-wrap:balance}
+.hero h1 b{color:var(--gold);font-weight:normal}
+.back{display:inline-block;margin-bottom:8px;color:var(--gold);text-shadow:2px 2px 0 var(--edge);text-decoration:none}
+.back:hover{text-decoration:underline;text-underline-offset:4px}
+.back:focus-visible{outline:4px solid var(--gold)}
+.hero p{margin:0;max-width:62ch;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:var(--edge);color:var(--gold);padding:4px 12px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--paper)}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding-block:12px;margin-inline:-16px;padding-inline:16px;
+  background:color-mix(in srgb,var(--plank) 92%,transparent);border-bottom:4px solid var(--edge)}
+.bar-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.search{display:flex;align-items:center;background:var(--field);border:4px solid var(--field-edge);outline:4px solid var(--edge);padding:8px 12px;gap:10px}
+.search:focus-within{border-color:#ffffff}
+.search label{color:var(--gold);white-space:nowrap}
+.search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--field-fg);font:inherit;caret-color:#fff}
+.search input::placeholder{color:#7a7a7a}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;cursor:pointer;color:var(--ink);background:var(--paper-2);border:0;padding:4px 10px;
+  box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),0 0 0 4px var(--edge);margin:4px;display:inline-flex;gap:6px;align-items:center}
+.chip:hover{filter:brightness(1.08)}
+.chip:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+.chip[aria-pressed="true"]{background:var(--grass);color:#fff;box-shadow:inset 4px 4px 0 color-mix(in srgb,#fff 35%,var(--grass)),inset -4px -4px 0 var(--grass-dk),0 0 0 4px var(--edge)}
+.chip img{width:16px;height:16px}
+.row-label{color:var(--paper);text-shadow:2px 2px 0 var(--edge);margin-right:4px;align-self:center}
+
+.count{margin:20px 0 12px;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:20px;align-items:start}
+.card{background:var(--paper);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);border:4px solid var(--edge);padding:16px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.card h2{margin:0;font-size:16px;font-weight:normal;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.card h2 .ko{font-size:32px;line-height:36px}
+.card h2 .en{color:var(--ink-soft)}
+.mod{align-self:flex-start;font-size:16px;color:var(--paper);background:var(--ink-soft);padding:0 8px}
+.mod[data-m="minecraft"]{background:var(--grass-dk)}
+.mod[data-m="alexsmobs"]{background:#9a5b2a}
+.mod[data-m="aether"],.mod[data-m="deep_aether"]{background:var(--sky)}
+.mod[data-m="dmr"]{background:var(--red)}
+.mod[data-m="twilightforest"]{background:#3f6a52}
+.mod[data-m="friendsandfoes"]{background:#8a6a1e}
+.mod[data-m="vanillabackport"]{background:#6b5a8e}
+.sec{border-top:4px dashed var(--paper-2);padding-top:10px;display:flex;flex-direction:column;gap:8px}
+.sec-h{display:flex;align-items:center;gap:8px;color:var(--ink)}
+.sec-h img{width:16px;height:16px}
+.sec-h b{font-weight:normal}
+.req{color:var(--red)}
+.items{display:flex;flex-wrap:wrap;gap:6px}
+.it{display:inline-flex;align-items:center;gap:6px;background:var(--slot-bg);color:#1f1f1f;padding:2px 8px 2px 2px;
+  box-shadow:inset 2px 2px 0 var(--slot-dk),inset -2px -2px 0 var(--slot-hi)}
+:root[data-theme="dark"] .it{color:#f0f0f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .it{color:#f0f0f0}}
+.it img{width:32px;height:32px;object-fit:cover;object-position:top}
+.it .noimg{width:32px;height:32px;background:var(--slot)}
+.more{font:inherit;cursor:pointer;border:0;background:transparent;color:var(--sky);text-decoration:underline;text-underline-offset:4px;padding:2px 4px}
+.more:focus-visible{outline:4px solid var(--gold)}
+.note{margin:0;color:var(--ink-soft);max-width:65ch}
+.extra{color:var(--ink-soft)}
+.egg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.empty{background:var(--paper);border:4px solid var(--edge);padding:32px 16px;text-align:center}
+footer{margin-top:32px;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);padding:16px;display:grid;gap:8px}
+footer p{margin:0;max-width:80ch}
+footer b{font-weight:normal;color:var(--grass-dk)}
+mark{background:var(--gold);color:#2a170a}
+@media (prefers-reduced-motion:no-preference){.card{animation:pop .18s steps(3) both}}
+@keyframes pop{from{transform:translateY(4px)}to{transform:none}}
+@media (max-width:520px){.hero h1{font-size:32px}.card h2 .ko{font-size:32px}}
+</style>
+
+<header class="hero">
+  <canvas id="ground" width="320" height="16" aria-hidden="true"></canvas>
+  <div class="hero-inner">
+    <div>
+      <a class="back" href="../">◀ BMC5 위키</a>
+      <h1>BMC5 <b>몹 사육 도감</b></h1>
+      <p>Better MC 5에 들어 있는 몹을 길들이고 번식시키는 방법을 모았습니다. 몹 이름이나 먹이 아이템 이름으로 찾아보세요.</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="search px"><label for="q">검색</label><input id="q" type="search" placeholder="예: 늑대, 밀, 바나나, dragon" autocomplete="off"></div>
+    <div class="chips" id="kinds" role="group" aria-label="방법"><span class="row-label">방법</span></div>
+    <div class="chips" id="mods" role="group" aria-label="모드"><span class="row-label">모드</span></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="count" id="count" aria-live="polite"></div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    <p><b>데이터 출처</b> 이 모드팩에 설치된 Just Enough Breeding 모드의 레시피 데이터와 각 모드의 아이템 태그를 직접 읽어서 만들었습니다. 바닐라 몹 설명, 드래곤 알 확률, 모아와 행복한 가스트 같은 특수한 방법은 따로 정리했습니다.</p>
+    <p><b>게임 안에서 확인</b> EMI에서 몹의 먹이 아이템을 찾아 사용처(U)를 보면 번식과 길들이기 탭이 나옵니다. 서버에 데이터팩이 따로 있으면 먹이가 이 문서와 다를 수 있습니다.</p>
+    <p><b>우리에 담아 옮기기</b> Supplementaries 우리로 새끼 몹과 작은 몹을 담아 옮길 수 있습니다. 새끼를 번식시켜 옮기면 편합니다.</p>
+  </footer>
+</main>
+
+<script>
+const DATA = /*__DATA__*/;
+const KINDS = ["길들이기","번식","신뢰","알","부화","복제","소환"];
+const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house"};
+
+// ---- pixel sprites drawn to canvas -> data URLs ----
+const PAL = {k:"#2a170a",r:"#d8332a",R:"#ff8a7a",w:"#f4efe0",W:"#c9c0a8",y:"#f4c542",Y:"#c78a12",e:"#f2ead2",E:"#cfc29b",s:"#9ad04a",o:"#e07a1f",O:"#a84f0c",g:"#4a8a2a",b:"#7a5230",B:"#5a3a1e",p:"#d86fd0",P:"#a03a98"};
+const SPR = {
+ heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."],
+ heart2:["........",".pp..pp.","pPpppppp","pppppppp",".pppppp.","..pppp..","...pp...","........"],
+ bone:["......ww",".....wWw","....wWw.","...wWw..","..wWw...",".wWw....","wWw.....","ww......"],
+ star:["...yy...","...yy...","yyyYYyyy",".yyYYyy.","..yyyy..",".yy..yy.","yy....yy","........"],
+ egg:["..eeee..",".eeeeee.",".eeEeee.","eeeeeEee","eeEeeeee","eeeeeeEe",".eeeeee.","..eeee.."],
+ pumpkin:["...gg...","..oooo..",".oOooOo.","ooooOooo","oOOoOOoo","oooooooo",".oOOOOo.","..oooo.."],
+ house:["...bb...","..bbbb..",".bbbbbb.","bbbbbbbb",".wWwwBw.",".wwwwBw.",".wwwwBw.",".BBBBBB."]
+};
+function sprite(name){
+  const rows=SPR[name], c=document.createElement("canvas"); c.width=8;c.height=8;
+  const x=c.getContext("2d");
+  rows.forEach((r,y)=>[...r].forEach((ch,i)=>{if(PAL[ch]){x.fillStyle=PAL[ch];x.fillRect(i,y,1,1)}}));
+  return c.toDataURL();
+}
+const SP = {}; for (const k in SPR) SP[k]=sprite(k);
+
+// ---- grass strip ----
+(function(){
+  const c=document.getElementById("ground"), x=c.getContext("2d");
+  let seed=7; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const G=["#5f9a2c","#6fae35","#4f8424"], D=["#8a5a33","#7a4e2b","#9c6a3d","#6b4325"];
+  for(let i=0;i<320;i++){const h=3+Math.floor(rnd()*3);
+    for(let y=0;y<16;y++){x.fillStyle = y<h ? G[Math.floor(rnd()*3)] : D[Math.floor(rnd()*4)]; x.fillRect(i,y,1,1);}
+  }
+})();
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const state={q:"",kinds:new Set(),mods:new Set(),open:new Set()};
+
+// search index
+for(const m of DATA.mobs){
+  m._txt=[m.n,m.en,m.id,DATA.mods[m.m],m.q,...m.s.flatMap(s=>[s.k,s.note||"",s.req||"",...s.items.map(i=>i[0]),...(s.extra||[]).map(i=>i[0]),...(s.egg?[s.egg[0]]:[])])].join(" ").toLowerCase();
+}
+
+function chips(){
+  const counts={}; const mc={};
+  for(const m of DATA.mobs){for(const t of m.t)counts[t]=(counts[t]||0)+1; mc[m.m]=(mc[m.m]||0)+1;}
+  const kd=$("#kinds");
+  for(const k of KINDS){ if(!counts[k])continue;
+    const b=document.createElement("button"); b.className="chip"; b.type="button"; b.id="k-"+k; b.setAttribute("aria-pressed","false");
+    b.innerHTML=`<img alt="" src="${SP[KIND_ICON[k]]}">${k} <span>${counts[k]}</span>`;
+    b.onclick=()=>{toggle(state.kinds,k,b)}; kd.appendChild(b);}
+  const md=$("#mods");
+  for(const id of Object.keys(DATA.mods)){ if(!mc[id])continue;
+    const b=document.createElement("button"); b.className="chip"; b.type="button"; b.id="m-"+id; b.setAttribute("aria-pressed","false");
+    b.textContent=`${DATA.mods[id]} ${mc[id]}`; b.onclick=()=>toggle(state.mods,id,b); md.appendChild(b);}
+  const tame=DATA.mobs.filter(m=>m.t.includes("길들이기")||m.t.includes("부화")).length, br=DATA.mobs.filter(m=>m.t.includes("번식")).length;
+  $("#stats").innerHTML=`<div class="stat px">몹 <span>${DATA.mobs.length}</span></div><div class="stat px">길들이기 <span>${tame}</span></div><div class="stat px">번식 <span>${br}</span></div>`;
+}
+function toggle(set,v,b){ set.has(v)?set.delete(v):set.add(v); b.setAttribute("aria-pressed",set.has(v)); render(); }
+
+const LIMIT=8;
+function itemChip(i){
+  const src=i[1]&&DATA.icons[i[1]];
+  return `<span class="it" title="${esc(i[0])}">${src?`<img alt="" src="${src}" loading="lazy">`:`<span class="noimg"></span>`}${esc(i[0])}</span>`;
+}
+function itemList(list,key){
+  if(!list.length) return "";
+  const open=state.open.has(key), shown=open?list:list.slice(0,LIMIT);
+  let h=`<div class="items">${shown.map(itemChip).join("")}`;
+  if(list.length>LIMIT) h+=`<button class="more" type="button" data-k="${esc(key)}">${open?"접기":`+${list.length-LIMIT}개 더 보기`}</button>`;
+  return h+"</div>";
+}
+function card(m){
+  const secs=m.s.map((s,ix)=>{
+    const key=m.id+"#"+ix;
+    let h=`<div class="sec"><div class="sec-h"><img alt="" src="${SP[KIND_ICON[s.k]]||SP.star}"><b>${esc(s.k)}</b>${s.req?` <span class="req">· ${esc(s.req)}</span>`:""}</div>`;
+    h+=itemList(s.items,key);
+    if(s.extra&&s.extra.length) h+=`<div class="extra">${esc(s.extraLabel||"추가")}</div>`+itemList(s.extra,key+"x");
+    if(s.egg) h+=`<div class="egg"><span class="extra">낳는 것</span>${itemChip(s.egg)}</div>`;
+    if(s.note) h+=`<p class="note">${esc(s.note)}</p>`;
+    return h+"</div>";
+  }).join("");
+  return `<article class="card" id="${esc(m.id.replace(":","-"))}"><span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span><h2><span class="ko">${esc(m.n)}</span><span class="en">${esc(m.en)}</span></h2>${secs}</article>`;
+}
+function render(){
+  const q=state.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const list=DATA.mobs.filter(m=>
+    (!state.mods.size||state.mods.has(m.m)) &&
+    (!state.kinds.size||[...state.kinds].every(k=>m.t.includes(k))) &&
+    q.every(w=>m._txt.includes(w)));
+  $("#count").textContent=`${list.length}마리 표시 중`;
+  $("#grid").innerHTML=list.length?list.map(card).join(""):`<div class="empty px">찾는 몹이 없습니다. 다른 이름이나 먹이 아이템으로 검색해 보세요.</div>`;
+}
+$("#grid").addEventListener("click",e=>{const b=e.target.closest(".more"); if(!b)return; const k=b.dataset.k; state.open.has(k)?state.open.delete(k):state.open.add(k); render();});
+let t; $("#q").addEventListener("input",e=>{clearTimeout(t); t=setTimeout(()=>{state.q=e.target.value; render();},80);});
+chips(); render();
+</script>

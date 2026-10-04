@@ -1,0 +1,71 @@
+<title>BMC5 위키</title>
+<style>
+@font-face{font-family:"MCPixel";src:url(__FONT_URL__) format("truetype");font-display:block}
+/* Layout: plank-wood page, one parchment panel listing wiki pages as inventory-style rows */
+:root{
+  --plank:#b8834a; --plank-line:#8f6232; --plank-hi:#c9965a;
+  --paper:#f4e4c1; --paper-2:#ead3a3; --ink:#3a2412; --ink-soft:#6e4a2a;
+  --edge:#2a170a; --hi:#fff6dc; --lo:#b48c55; --gold:#e9a628; --grass:#5f9a2c;
+  --font:"MCPixel","Malgun Gothic","Apple SD Gothic Neo",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a; --gold:#ffc04d; --grass:#86c447; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --plank:#3b2717; --plank-line:#24170c; --plank-hi:#4a321e;
+  --paper:#2d2016; --paper-2:#3a2a1c; --ink:#f4dfb6; --ink-soft:#c8a77a;
+  --edge:#0d0804; --hi:#5a4330; --lo:#16100a; --gold:#ffc04d; --grass:#86c447; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:none}
+body{margin:0;font-family:var(--font);font-size:16px;line-height:24px;color:var(--ink);background-color:var(--plank);
+  background-image:linear-gradient(var(--plank-line) 0 4px,transparent 4px),
+    linear-gradient(90deg,transparent 0 60%,var(--plank-line) 60% calc(60% + 4px),transparent 0),
+    linear-gradient(90deg,transparent 0 20%,var(--plank-line) 20% calc(20% + 4px),transparent 0),
+    linear-gradient(var(--plank-hi) 0 4px,transparent 4px);
+  background-size:100% 64px,256px 64px,256px 64px,100% 64px;background-position:0 0,0 0,128px 32px,0 8px}
+#ground{display:block;width:100%;height:64px;image-rendering:pixelated}
+main{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:32px 48px;display:grid;gap:24px}
+h1{margin:0;font-size:32px;line-height:40px;font-weight:normal;color:var(--paper);text-shadow:4px 4px 0 var(--edge)}
+h1 b{color:var(--gold);font-weight:normal}
+.lead{margin:0;color:var(--paper);text-shadow:2px 2px 0 var(--edge);max-width:60ch}
+.panel{background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);padding:8px}
+.page{display:flex;gap:16px;align-items:center;padding:12px;text-decoration:none;color:var(--ink)}
+.page+.page{border-top:4px dashed var(--paper-2)}
+.page:hover,.page:focus-visible{background:var(--paper-2);outline:none}
+.page:focus-visible{box-shadow:0 0 0 4px var(--gold)}
+.page canvas{width:48px;height:48px;image-rendering:pixelated;flex:none}
+.page div{min-width:0}
+.page b{display:block;font-weight:normal;font-size:16px;color:var(--ink)}
+.page span{color:var(--ink-soft)}
+footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+</style>
+
+<canvas id="ground" width="320" height="16" aria-hidden="true"></canvas>
+<main>
+  <div>
+    <h1>BMC5 <b>위키</b></h1>
+    <p class="lead">Better MC [NEOFORGE] BMC5 모드팩을 하면서 찾아본 것들을 모아 두는 곳입니다.</p>
+  </div>
+  <nav class="panel" aria-label="문서 목록">
+    <a class="page" href="mobs/">
+      <canvas data-sprite="heart" width="8" height="8" aria-hidden="true"></canvas>
+      <div><b>몹 사육 도감</b><span>몹 113종을 길들이고 번식시키는 방법과 먹이 아이템</span></div>
+    </a>
+  </nav>
+  <footer>모드팩 버전: Better MC [NEOFORGE] BMC5 · Minecraft 1.21.1</footer>
+</main>
+
+<script>
+(function(){
+  const c=document.getElementById("ground"), x=c.getContext("2d");
+  let seed=7; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const G=["#5f9a2c","#6fae35","#4f8424"], D=["#8a5a33","#7a4e2b","#9c6a3d","#6b4325"];
+  for(let i=0;i<320;i++){const h=3+Math.floor(rnd()*3);
+    for(let y=0;y<16;y++){x.fillStyle=y<h?G[Math.floor(rnd()*3)]:D[Math.floor(rnd()*4)];x.fillRect(i,y,1,1);}}
+  const SPR={heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."]};
+  const PAL={r:"#d8332a",R:"#ff8a7a"};
+  document.querySelectorAll("canvas[data-sprite]").forEach(cv=>{const g=cv.getContext("2d");
+    SPR[cv.dataset.sprite].forEach((row,y)=>[...row].forEach((ch,i)=>{if(PAL[ch]){g.fillStyle=PAL[ch];g.fillRect(i,y,1,1);}}));});
+})();
+</script>
