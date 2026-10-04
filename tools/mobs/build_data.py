@@ -177,7 +177,9 @@ for m in raw["mobs"]:
     add(mid, name, m["en"], m["mod"], secs, tags)
 
 def ex(tag):
-    return [[AETHER_KO.get(i["name"], i["name"]), i["id"]] for i in raw["extra"].get(tag, [])]
+    # vanilla items first so the familiar ones show before the "+N more" cut
+    lst = sorted(raw["extra"].get(tag, []), key=lambda i: not i["id"].startswith("minecraft:"))
+    return [[AETHER_KO.get(i["name"], i["name"]), i["id"]] for i in lst]
 
 def with_icons(lst):
     out = []
