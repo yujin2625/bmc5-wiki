@@ -19,10 +19,14 @@ def load(p):
     return open(os.path.join(TOOLS, p), encoding="utf-8").read()
 
 # (html fragment, output path under docs/) -- add new wiki pages here
-wiki = json.load(open(os.path.join(TOOLS, "mobs", "wiki.json"), encoding="utf-8"))
+def data_page(template, data_json):
+    wiki = json.load(open(os.path.join(TOOLS, data_json), encoding="utf-8"))
+    return load(template).replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":")))
+_gear = json.load(open(os.path.join(TOOLS, "gear", "wiki.json"), encoding="utf-8"))
 PAGES = [
-    (load("home.html"), "index.html"),
-    (load("mobs/template.html").replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":"))), "mobs/index.html"),
+    (load("home.html").replace("__GEAR_N__", str(len(_gear["items"]))).replace("__ENCH_N__", str(len(_gear["ench"]))), "index.html"),
+    (data_page("mobs/template.html", "mobs/wiki.json"), "mobs/index.html"),
+    (data_page("gear/template.html", "gear/wiki.json"), "gear/index.html"),
 ]
 
 # characters that can appear on screen

@@ -25,19 +25,21 @@ body{margin:0;font-family:var(--font);font-size:16px;line-height:24px;color:var(
     linear-gradient(var(--plank-hi) 0 4px,transparent 4px);
   background-size:100% 64px,256px 64px,256px 64px,100% 64px;background-position:0 0,0 0,128px 32px,0 8px}
 #ground{display:block;width:100%;height:64px;image-rendering:pixelated}
-main{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:32px 48px;display:grid;gap:24px}
+main{max-width:880px;margin:0 auto;padding-inline:16px;padding-block:32px 48px;display:grid;gap:24px}
 h1{margin:0;font-size:32px;line-height:40px;font-weight:normal;color:var(--paper);text-shadow:4px 4px 0 var(--edge)}
 h1 b{color:var(--gold);font-weight:normal}
 .lead{margin:0;color:var(--paper);text-shadow:2px 2px 0 var(--edge);max-width:60ch}
-.panel{background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);padding:8px}
-.page{display:flex;gap:16px;align-items:center;padding:12px;text-decoration:none;color:var(--ink)}
-.page+.page{border-top:4px dashed var(--paper-2)}
-.page:hover,.page:focus-visible{background:var(--paper-2);outline:none}
-.page:focus-visible{box-shadow:0 0 0 4px var(--gold)}
-.page canvas{width:48px;height:48px;image-rendering:pixelated;flex:none}
-.page div{min-width:0}
-.page b{display:block;font-weight:normal;font-size:16px;color:var(--ink)}
+.pick{margin:0;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
+.books{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.page{display:flex;flex-direction:column;gap:12px;padding:20px;text-decoration:none;color:var(--ink);background:var(--paper);border:4px solid var(--edge);
+  box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),6px 6px 0 rgba(0,0,0,.35)}
+.page:hover{filter:brightness(1.06);transform:translate(-2px,-2px);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo),8px 8px 0 rgba(0,0,0,.35)}
+.page:focus-visible{outline:4px solid var(--gold);outline-offset:4px}
+.page .ico{display:flex;gap:8px}
+.page canvas{width:64px;height:64px;image-rendering:pixelated;flex:none;background:var(--paper-2);padding:8px;box-sizing:content-box}
+.page b{display:block;font-weight:normal;font-size:32px;line-height:36px;color:var(--ink)}
 .page span{color:var(--ink-soft)}
+.page .go{margin-top:auto;align-self:flex-start;background:var(--grass);color:#fff;padding:4px 12px;box-shadow:inset 4px 4px 0 color-mix(in srgb,#fff 35%,var(--grass)),inset -4px -4px 0 color-mix(in srgb,#000 25%,var(--grass))}
 footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
 </style>
 
@@ -47,10 +49,17 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
     <h1>BMC5 <b>위키</b></h1>
     <p class="lead">Better MC [NEOFORGE] BMC5 모드팩을 하면서 찾아본 것들을 모아 두는 곳입니다.</p>
   </div>
-  <nav class="panel" aria-label="문서 목록">
+  <p class="pick">보고 싶은 도감을 고르세요.</p>
+  <nav class="books" aria-label="도감 목록">
     <a class="page" href="mobs/">
-      <canvas data-sprite="heart" width="8" height="8" aria-hidden="true"></canvas>
-      <div><b>몹 사육 도감</b><span>몹 113종의 길들이기·번식 방법. 즐겨찾기와 나만의 리스트</span></div>
+      <span class="ico"><canvas data-sprite="heart" width="8" height="8" aria-hidden="true"></canvas></span>
+      <b>몹 사육 도감</b><span>몹 113종의 길들이기·번식 방법, 체력과 사는 곳. 즐겨찾기와 나만의 리스트</span>
+      <span class="go">도감 열기 ▶</span>
+    </a>
+    <a class="page" href="gear/">
+      <span class="ico"><canvas data-sprite="sword" width="8" height="8" aria-hidden="true"></canvas><canvas data-sprite="book" width="8" height="8" aria-hidden="true"></canvas></span>
+      <b>장비·인챈트 도감</b><span>무기·갑옷·방패·도구·장신구 __GEAR_N__개와 인챈트 __ENCH_N__종. 수치, 만드는 법, 붙일 수 있는 인챈트를 서로 이어서 보여 줍니다</span>
+      <span class="go">도감 열기 ▶</span>
     </a>
   </nav>
   <footer>모드팩 버전: Better MC [NEOFORGE] BMC5 · Minecraft 1.21.1</footer>
@@ -63,8 +72,10 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
   const G=["#5f9a2c","#6fae35","#4f8424"], D=["#8a5a33","#7a4e2b","#9c6a3d","#6b4325"];
   for(let i=0;i<320;i++){const h=3+Math.floor(rnd()*3);
     for(let y=0;y<16;y++){x.fillStyle=y<h?G[Math.floor(rnd()*3)]:D[Math.floor(rnd()*4)];x.fillRect(i,y,1,1);}}
-  const SPR={heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."]};
-  const PAL={r:"#d8332a",R:"#ff8a7a"};
+  const SPR={heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."],
+    sword:["......gw",".....gwg","....gwg.","...gwg..","b.gwg...",".bwg....",".Bb.....","B.b....."],
+    book:["........",".PPPPPP.",".PwwwwP.",".PpppPP.",".PwwwwP.",".PpppPP.",".PPPPPP.","........"]};
+  const PAL={r:"#d8332a",R:"#ff8a7a",g:"#9aa3ad",w:"#f4efe0",b:"#7a5230",B:"#5a3a1e",p:"#b58cff",P:"#7b4fc2"};
   document.querySelectorAll("canvas[data-sprite]").forEach(cv=>{const g=cv.getContext("2d");
     SPR[cv.dataset.sprite].forEach((row,y)=>[...row].forEach((ch,i)=>{if(PAL[ch]){g.fillStyle=PAL[ch];g.fillRect(i,y,1,1);}}));});
 })();

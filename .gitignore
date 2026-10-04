@@ -5,3 +5,6 @@ tools/mobs/info.json
 tools/render/out/
 tools/out/
 __pycache__/
+tools/gear/stats.json
+tools/gear/wiki.json
+tools/gear/untranslated.json
