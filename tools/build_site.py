@@ -20,10 +20,9 @@ def load(p):
 
 # (html fragment, output path under docs/) -- add new wiki pages here
 wiki = json.load(open(os.path.join(TOOLS, "mobs", "wiki.json"), encoding="utf-8"))
-eggs = open(os.path.join(TOOLS, "mobs", "eggs.json"), encoding="utf-8").read()
 PAGES = [
     (load("home.html"), "index.html"),
-    (load("mobs/template.html").replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":"))).replace("/*__EGGS__*/", eggs), "mobs/index.html"),
+    (load("mobs/template.html").replace("/*__DATA__*/", json.dumps(wiki, ensure_ascii=False, separators=(",", ":"))), "mobs/index.html"),
 ]
 
 # characters that can appear on screen
@@ -218,6 +217,12 @@ hpos = 12 + 16*nt + sum(len(tables[t]) + ((4 - len(tables[t]) % 4) % 4) for t in
 font = font[:hpos+8] + struct.pack(">I", adj) + font[hpos+12:]
 
 # ---------- write site ----------
+import shutil
+RENDERS = os.path.join(TOOLS, "render", "out", "mobs")      # made by tools/render/render_mobs.py
+if os.path.isdir(RENDERS):
+    dst = os.path.join(DOCS, "mobs", "img"); os.makedirs(dst, exist_ok=True)
+    for f in os.listdir(RENDERS):
+        if f.endswith(".png"): shutil.copyfile(os.path.join(RENDERS, f), os.path.join(dst, f))
 os.makedirs(os.path.join(DOCS, "assets", "fonts"), exist_ok=True)
 open(os.path.join(DOCS, FONT_REL), "wb").write(font)
 

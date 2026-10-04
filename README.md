@@ -12,6 +12,7 @@ docs/                  배포되는 사이트 (빌드 결과물, 직접 고치�
 tools/
   build_site.py        페이지 조립 + 폰트 생성 → docs/
   jdis.py              클래스 파일 디스어셈블러 (모드 코드 확인용, JDK 불필요)
+  render/              몹 렌더러: 모델 코드를 실행하는 작은 JVM 해석기(jvm.py) + 소프트웨어 래스터라이저
   home.html            첫 화면 원본
   mobs/                몹 사육 도감 원본과 데이터 추출 스크립트
 .github/workflows/     main에 push하면 Pages로 자동 배포
@@ -26,7 +27,9 @@ CurseForge가 설치된 이 PC에서 실행해야 합니다. 경로가 다르면
 # 모드가 바뀌었을 때만: 모드 jar에서 번식/길들이기 데이터 다시 뽑기
 python tools/mobs/extract.py
 python tools/mobs/build_data.py
-python tools/mobs/eggs.py      # 스폰 알 색상(몹 그림)을 모드 코드에서 추출
+python tools/mobs/info.py      # 체력·공격력(속성 코드), 사는 곳(바이옴·스폰 설정), 드롭(전리품 테이블)
+python tools/mobs/build_data.py   # info.json을 반영하려면 한 번 더
+python tools/render/render_mobs.py   # 몹 그림: 게임 속 3D 모델+텍스처를 직접 렌더링 (out/contact.png로 한눈에 확인)
 
 # 사이트 빌드
 python tools/build_site.py

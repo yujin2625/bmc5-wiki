@@ -318,6 +318,23 @@ for key, nm, where, hab in BREEDS:
         {"k": "회복", "items": meat, "note": "길들인 드래곤이 다쳤을 때 고기류를 주면 음식 포만도만큼 체력이 찹니다."}],
         [KIND_HATCH, KIND_TAME, KIND_BREED, KIND_EGG], "드래곤 알 dragon egg 안장 하이브리드")
 
+# ---- facts from info.py (health, attack, drops, spawn biomes) ----
+INFO = os.path.join(HERE, "info.json")
+HP_RANDOM = {"minecraft:horse", "minecraft:donkey", "minecraft:mule", "minecraft:llama", "minecraft:trader_llama"}  # AbstractHorse.generateMaxHealth: 15 + rand(8) + rand(9)
+if os.path.exists(INFO):
+    info = json.load(open(INFO, encoding="utf-8"))
+    for mm in mobs:
+        f = info.get(mm["id"])
+        if not f: continue
+        i = {}
+        if f.get("hp") is not None: i["hp"] = [15, 30] if mm["id"] in HP_RANDOM else round(f["hp"], 1)
+        if f.get("atk"): i["atk"] = round(f["atk"], 1)
+        i["drops"] = with_icons(f.get("drops", []))
+        i["biomes"] = [b[0] for b in f.get("biomes", [])]
+        if f.get("spawn_note"): i["sn"] = f["spawn_note"]
+        mm["i"] = i
+        mm["q"] = (mm.get("q", "") + " " + " ".join(i["biomes"]) + " " + " ".join(d[0] for d in i["drops"])).strip()
+
 order = {"minecraft": 0, "vanillabackport": 1, "alexsmobs": 2, "friendsandfoes": 3, "twilightforest": 4, "aether": 5, "deep_aether": 6, "dmr": 7}
 mobs.sort(key=lambda x: (order.get(x["m"], 9), x["n"]))
 out = {"mods": MODS, "mobs": mobs, "icons": icons}

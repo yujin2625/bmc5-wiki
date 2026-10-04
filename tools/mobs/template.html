@@ -99,11 +99,11 @@ header.hero{position:relative;padding-inline:16px}
 /* ---- uniform cards ---- */
 .count{margin:16px 0 12px;color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:16px}
-.card{position:relative;height:248px;min-width:0;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo)}
+.card{position:relative;height:284px;min-width:0;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo)}
 .card:hover{filter:brightness(1.05)}
 .card .open{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;height:100%;padding:12px 12px 10px;text-align:center}
 .card .open:focus-visible{outline:4px solid var(--gold);outline-offset:-8px}
-.portrait{width:64px;height:64px;image-rendering:pixelated;flex:none;margin-top:4px}
+.portrait{width:96px;height:96px;image-rendering:pixelated;flex:none}
 .card .ko{font-size:16px;line-height:24px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .en{color:var(--ink-soft);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px;line-height:20px}
 .card .mod{align-self:center;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -133,7 +133,7 @@ dialog#detail{padding:0;border:4px solid var(--edge);background:var(--paper);col
 dialog#detail::backdrop{background:rgba(20,10,4,.6)}
 .dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 40px)}
 .dlg-head{display:flex;gap:16px;align-items:center;padding:16px;border-bottom:4px solid var(--paper-2)}
-.dlg-head .portrait{width:64px;height:64px;margin:0}
+.dlg-head .portrait{width:96px;height:96px;margin:0}
 .dlg-head h2{margin:0;font-size:32px;line-height:36px;font-weight:normal}
 .dlg-head .en{color:var(--ink-soft)}
 .dlg-head .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
@@ -163,11 +163,18 @@ dialog#detail::backdrop{background:rgba(20,10,4,.6)}
 .extra{color:var(--ink-soft)}
 .egg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.fact{background:var(--paper-2);padding:6px 10px;display:flex;flex-direction:column;gap:2px}
+.fact .k{color:var(--ink-soft)}
+.fact .v{display:flex;flex-wrap:wrap;align-items:center;gap:2px}
+.fact .v img{width:16px;height:16px}
+.bios{display:flex;flex-wrap:wrap;gap:6px}
+.bio{background:var(--paper-2);padding:0 8px}
 .empty{grid-column:1/-1;background:var(--paper);border:4px solid var(--edge);padding:32px 16px;text-align:center}
 footer{margin-top:32px;background:var(--paper);border:4px solid var(--edge);box-shadow:inset 4px 4px 0 var(--hi),inset -4px -4px 0 var(--lo);padding:16px;display:grid;gap:8px}
 footer p{margin:0;max-width:80ch}
 footer b{font-weight:normal;color:var(--grass-dk)}
-@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{height:236px}.card .open{padding:10px 6px}.card .feed{gap:2px}.card .feed img,.card .feed .noimg{width:24px;height:24px}}
+@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{height:268px}.card .open{padding:10px 6px}.card .portrait{width:80px;height:80px}.card .feed{gap:2px}.card .feed img,.card .feed .noimg{width:24px;height:24px}}
 .card .feed{max-width:100%;overflow:hidden}
 </style>
 
@@ -200,7 +207,8 @@ footer b{font-weight:normal;color:var(--grass-dk)}
   <div class="count" id="count" aria-live="polite"></div>
   <div class="grid" id="grid"></div>
   <footer>
-    <p><b>데이터 출처</b> 이 모드팩에 설치된 Just Enough Breeding 모드의 레시피 데이터와 각 모드의 아이템 태그를 직접 읽어서 만들었습니다. 길들이기 확률, 조건, 특수한 방법은 바닐라와 각 모드의 실제 코드와 이 서버의 설정 파일을 읽어서 확인했습니다. 몹 그림은 각 몹의 스폰 알입니다.</p>
+    <p><b>데이터 출처</b> 이 모드팩에 설치된 Just Enough Breeding 모드의 레시피 데이터와 각 모드의 아이템 태그를 직접 읽어서 만들었습니다. 길들이기 확률, 조건, 특수한 방법은 바닐라와 각 모드의 실제 코드와 이 서버의 설정 파일을 읽어서 확인했습니다. 몹 그림은 게임 파일 속 각 몹의 3D 모델과 텍스처로 직접 그렸습니다.</p>
+    <p><b>체력·스폰·드롭</b> 체력과 공격력은 각 몹의 속성 등록 코드, 사는 곳은 바이옴 데이터와 모드 스폰 설정, 떨어뜨리는 것은 전리품 테이블에서 뽑았습니다. 이 PC의 설정 기준이라 서버 설정과 다를 수 있습니다. 체력 하트 1칸은 2입니다.</p>
     <p><b>즐겨찾기와 리스트</b> 별표와 리스트는 지금 쓰는 브라우저에만 저장됩니다. 다른 기기나 브라우저에서는 따로 만들어야 합니다.</p>
     <p><b>게임 안에서 확인</b> EMI에서 몹의 먹이 아이템을 찾아 사용처(U)를 보면 번식과 길들이기 탭이 나옵니다. 서버에 데이터팩이 따로 있으면 먹이가 이 문서와 다를 수 있습니다.</p>
   </footer>
@@ -210,7 +218,6 @@ footer b{font-weight:normal;color:var(--grass-dk)}
 
 <script>
 const DATA = /*__DATA__*/;
-const EGGS = /*__EGGS__*/;
 const KINDS = ["길들이기","번식","신뢰","알","부화","새끼 키우기","복제","소환"];
 const KIND_ICON = {"길들이기":"bone","번식":"heart","신뢰":"star","알":"egg","부화":"egg","복제":"heart2","소환":"pumpkin","서식지":"house","새끼 키우기":"sprout","회복":"heart","포획":"bucket","폭발":"tnt","블록 먹이기":"block","타기":"star"};
 const PAL = {k:"#2a170a",r:"#d8332a",R:"#ff8a7a",w:"#f4efe0",W:"#c9c0a8",y:"#f4c542",Y:"#c78a12",e:"#f2ead2",E:"#cfc29b",s:"#9ad04a",o:"#e07a1f",O:"#a84f0c",g:"#4a8a2a",b:"#7a5230",B:"#5a3a1e",p:"#d86fd0",P:"#a03a98"};
@@ -236,32 +243,8 @@ function sprite(name){
 }
 const SP = {}; for (const k in SPR) SP[k]=sprite(k);
 
-// ---- spawn egg portraits: tint the vanilla template + overlay, like the game does ----
-const eggCache = {};
-function loadImg(src){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=src;});}
-let EGG_BASE=null;
-async function prepEggs(){
-  const [t,o]=await Promise.all([loadImg(EGGS.template),loadImg(EGGS.overlay)]);
-  const read=img=>{const c=document.createElement("canvas");c.width=16;c.height=16;const x=c.getContext("2d");x.drawImage(img,0,0);return x.getImageData(0,0,16,16);};
-  EGG_BASE={t:read(t),o:read(o)};
-}
-function eggURL(id){
-  if(eggCache[id]) return eggCache[id];
-  if(EGGS.pngs[id]) return eggCache[id]=EGGS.pngs[id];
-  const col=EGGS.colors[id]; if(!col||!EGG_BASE) return "";
-  const c=document.createElement("canvas");c.width=16;c.height=16;const x=c.getContext("2d");
-  const out=x.createImageData(16,16);
-  const layers=[[EGG_BASE.t,col[0]],[EGG_BASE.o,col[1]]];
-  for(const [img,rgb] of layers){
-    const r=rgb>>16&255,g=rgb>>8&255,b=rgb&255;
-    for(let i=0;i<img.data.length;i+=4){
-      const a=img.data[i+3]; if(!a) continue;
-      out.data[i]=img.data[i]*r/255; out.data[i+1]=img.data[i+1]*g/255; out.data[i+2]=img.data[i+2]*b/255; out.data[i+3]=a;
-    }
-  }
-  x.putImageData(out,0,0);
-  return eggCache[id]=c.toDataURL();
-}
+// ---- mob portraits: rendered offline from each mob's in-game model + texture (tools/render) ----
+const portrait=id=>"img/"+id.replace(":","-")+".png";
 
 // ---- grass strip ----
 (function(){
@@ -372,7 +355,7 @@ function card(m){
   const kinds=m.t.filter(t=>KIND_ICON[t]).map(t=>`<img alt="" title="${esc(t)}" src="${SP[KIND_ICON[t]]}">`).join("");
   return `<article class="card">${starBtn(m)}
     <button type="button" class="open" data-open="${esc(m.id)}" aria-label="${esc(m.n)} 자세히 보기">
-      <img class="portrait" alt="" src="${eggURL(m.id)}">
+      <img class="portrait" alt="" src="${portrait(m.id)}" loading="lazy" width="96" height="96">
       <span class="ko">${esc(m.n)}</span><span class="en">${esc(m.en)}</span>
       <span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span>
       <span class="kinds" aria-label="${esc(m.t.join(", "))}">${kinds}</span>
@@ -395,12 +378,34 @@ function saveBox(m){
   return `<div class="save"><div class="row"><b style="font-weight:normal">리스트에 저장</b>${boxes||`<span class="hint">아직 리스트가 없습니다.</span>`}</div>
     <form class="row" id="dlg-new"><label for="dlg-newname" class="hint">새 리스트</label><input id="dlg-newname" maxlength="24" placeholder="리스트 이름" style="font:inherit;background:var(--field);color:var(--field-fg);border:4px solid var(--field-edge);padding:2px 8px;width:10em"><button class="btn" type="submit">만들고 저장</button></form></div>`;
 }
+function hearts(hp){
+  const n=Math.ceil(hp/2), shown=Math.min(n,10);
+  return Array.from({length:shown},()=>`<img alt="" src="${SP.heart}">`).join("")+(n>10?` ×${n}`:"");
+}
+function factsBlock(m){
+  const i=m.i; if(!i) return "";
+  let h=`<div class="sec"><div class="sec-h"><img alt="" src="${SP.star}"><b>정보</b></div><div class="facts">`;
+  if(i.hp!==undefined){
+    if(Array.isArray(i.hp)) h+=`<div class="fact"><span class="k">체력</span><span class="v">${i.hp[0]}~${i.hp[1]} (개체마다 다름)</span></div>`;
+    else h+=`<div class="fact"><span class="k">체력 ${i.hp}</span><span class="v">${hearts(i.hp)}</span></div>`;
+  }
+  if(i.atk) h+=`<div class="fact"><span class="k">공격력</span><span class="v">${i.atk} (하트 ${i.atk/2}칸)</span></div>`;
+  h+=`</div>`;
+  h+=`<div class="extra">사는 곳</div>`;
+  if(i.biomes.length){
+    const key=m.id+"#bio", open=state.open.has(key), list=open?i.biomes:i.biomes.slice(0,12);
+    h+=`<div class="bios">${list.map(b=>`<span class="bio">${esc(b)}</span>`).join("")}${i.biomes.length>12?`<button class="more" type="button" data-k="${esc(key)}">${open?"접기":`+${i.biomes.length-12}곳 더 보기`}</button>`:""}</div>`;
+  } else h+=`<p class="note">${esc(i.sn||"바이옴에서 저절로 생성되지 않습니다.")}</p>`;
+  h+=`<div class="extra">잡으면 떨어뜨리는 것</div>`;
+  h+= i.drops.length?itemList(i.drops,m.id+"#drop"):`<p class="note">없음</p>`;
+  return h+`</div>`;
+}
 function renderDetail(){
   const m=BY_ID[state.detail]; const d=$("#detail"); if(!m) return;
-  d.innerHTML=`<div class="dlg"><div class="dlg-head"><img class="portrait" alt="" src="${eggURL(m.id)}">
+  d.innerHTML=`<div class="dlg"><div class="dlg-head"><img class="portrait" alt="" src="${portrait(m.id)}">
       <div class="who"><h2 id="dlg-title">${esc(m.n)}</h2><span class="en">${esc(m.en)}</span><span class="mod" data-m="${m.m}">${esc(DATA.mods[m.m]||m.m)}</span></div>
       ${starBtn(m)}<button type="button" class="close" id="dlg-close" aria-label="닫기">X</button></div>
-    <div class="dlg-body">${saveBox(m)}${sections(m)}</div></div>`;
+    <div class="dlg-body">${saveBox(m)}${factsBlock(m)}${sections(m)}</div></div>`;
 }
 function openDetail(id,push=true){
   if(!BY_ID[id]) return;
@@ -446,9 +451,5 @@ $("#grid").addEventListener("click",e=>{
 let t; $("#q").addEventListener("input",e=>{clearTimeout(t); t=setTimeout(()=>{state.q=e.target.value; render();},80);});
 
 chips(); renderViews(); render();
-prepEggs().then(()=>{
-  render();
-  const h=decodeURIComponent(location.hash.slice(1)); const id=h.replace("-",":");
-  if(BY_ID[id]) openDetail(id,false);
-});
+{const h=decodeURIComponent(location.hash.slice(1)); const id=h.replace("-",":"); if(BY_ID[id]) openDetail(id,false);}
 </script>

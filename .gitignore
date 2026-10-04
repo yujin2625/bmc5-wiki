@@ -1,6 +1,7 @@
 # 빌드 중간 산출물 (모드 jar에서 다시 생성 가능)
 tools/mobs/data.json
 tools/mobs/wiki.json
-tools/mobs/eggs.json
+tools/mobs/info.json
+tools/render/out/
 tools/out/
 __pycache__/
