@@ -19,10 +19,11 @@ JARS = {
     "twilightforest": [mod_jar("twilightforest-*.jar"), SRG], "aether": [mod_jar("aether-1.21.1-*.jar"), SRG],
     "deep_aether": [mod_jar("deep_aether-*.jar"), mod_jar("aether-1.21.1-*.jar"), SRG],
     "friendsandfoes": [mod_jar("friendsandfoes-*.jar"), SRG], "vanillabackport": [mod_jar("VanillaBackport-*.jar"), SRG],
+    "hybrid_aquatic": [mod_jar("hybrid_aquatic-*.jar"), mod_jar("hapi-*.jar"), SRG],
 }
 ASSET_JARS = [mod_jar("VanillaBackport-*.jar"), VANILLA_ASSETS, mod_jar("alexsmobs-*.jar"), mod_jar("twilightforest-*.jar"),
               mod_jar("aether-1.21.1-*.jar"), mod_jar("deep_aether-*.jar"), mod_jar("friendsandfoes-*.jar"),
-              mod_jar("Dragon Mounts Remastered-*.jar")]
+              mod_jar("Dragon Mounts Remastered-*.jar"), mod_jar("hybrid_aquatic-*.jar")]
 _zips = [zipfile.ZipFile(j) for j in ASSET_JARS if j]
 
 def read_asset(path):

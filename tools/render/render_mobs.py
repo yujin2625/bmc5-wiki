@@ -75,6 +75,13 @@ OTHER = {
     "friendsandfoes:crab": (("static", "friendsandfoes", FF + "CrabEntityModel", "getTexturedModelData"), "assets/friendsandfoes/textures/entity/crab/crab.png"),
     "friendsandfoes:glare": (("static", "friendsandfoes", FF + "GlareEntityModel", "getTexturedModelData"), "assets/friendsandfoes/textures/entity/glare/glare.png"),
     "friendsandfoes:moobloom": (("van", "COW"), "assets/friendsandfoes/textures/entity/moobloom/moobloom_buttercup.png"),
+    # Hybrid Aquatic (GeckoLib .geo.json)
+    "hybrid_aquatic:carp": (("geo", "assets/hybrid_aquatic/geo/fish/carp/carp.geo.json"), "assets/hybrid_aquatic/textures/entity/fish/carp/koi_orange.png"),
+    "hybrid_aquatic:goldfish": (("geo", "assets/hybrid_aquatic/geo/fish/goldfish/common_goldfish.geo.json"), "assets/hybrid_aquatic/textures/entity/fish/goldfish/common_goldfish.png"),
+    "hybrid_aquatic:dugong": (("geo", "assets/hybrid_aquatic/geo/mammal/dugong/dugong.geo.json"), "assets/hybrid_aquatic/textures/entity/mammal/dugong/dugong.png"),
+    "hybrid_aquatic:manatee": (("geo", "assets/hybrid_aquatic/geo/mammal/manatee/manatee.geo.json"), "assets/hybrid_aquatic/textures/entity/mammal/manatee/manatee.png"),
+    "hybrid_aquatic:orca": (("geo", "assets/hybrid_aquatic/geo/mammal/orca/orca.geo.json"), "assets/hybrid_aquatic/textures/entity/mammal/orca/black_orca.png"),
+    "hybrid_aquatic:otter": (("geo", "assets/hybrid_aquatic/geo/mammal/otter/river_otter.geo.json"), "assets/hybrid_aquatic/textures/entity/mammal/otter/river_otter.png"),
 }
 DRAGON_TEX = {"end": "ender", "sculk": "skulk"}
 

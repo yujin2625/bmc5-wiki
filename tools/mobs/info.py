@@ -88,10 +88,20 @@ def attr_events():
     direct("friendsandfoes", "glare", FF + "GlareEntity", "createGlareAttributes")
     direct("vanillabackport", "sulfur_cube", "com/blackgear/vanillabackport/common/level/entities/sulfurcube/SulfurCube", "createSulfurCubeAttributes")
     direct("vanillabackport", "happy_ghast", "com/blackgear/vanillabackport/common/level/entities/happyghast/HappyGhast", "createAttributes")
+    # Hybrid Aquatic: Kotlin companion objects (instance method, receiver = the Companion)
+    vm = models.vm_for("hybrid_aquatic")
+    for p, path in (("carp", "fish/CarpEntity"), ("goldfish", "fish/GoldfishEntity"), ("dugong", "mammal/DugongEntity"),
+                    ("manatee", "mammal/ManateeEntity"), ("orca", "mammal/OrcaEntity"), ("otter", "mammal/OtterEntity")):
+        cls = "dev/hybridlabs/aquatic/entity/" + path + "$Companion"
+        cf = vm.load(cls); vm.steps = 0
+        if not cf: continue
+        m = cf.methods.get(("createMobAttributes", "()Lnet/minecraft/world/entity/ai/attributes/AttributeSupplier$Builder;"))
+        if m and m[1] is not None:
+            try:
+                r = vm.run(cf, m, [Obj(cls)])
+                if isinstance(r, Obj) and isinstance(r.native, dict): res[("hybrid_aquatic", p)] = r.native
+            except Exception as e: print("  attr HA", p, e)
     return res
-
-def find_classes():
-    pass
 
 # ---------------------------------------------------------------- drops
 def loot_items(node, out):
@@ -188,6 +198,13 @@ def spawns():
         cap = mob.capitalize()
         if ff.get(f"enable{cap}Spawn", True) and ff.get(f"{mob}SpawnWeight", 1) > 0:
             res.setdefault("friendsandfoes:" + mob, set()).update(btag("friendsandfoes:" + tag))
+    # Hybrid Aquatic: config/hybrid_aquatic.json "spawn_configuration" entries {type, biomes: <biome tag>, weight}
+    try: ha = json.load(open(os.path.join(INST, "config", "hybrid_aquatic.json"), encoding="utf-8"))
+    except Exception: ha = {}
+    for e in ha.get("spawn_configuration", []):
+        if e.get("weight", 1) > 0 and isinstance(e.get("biomes"), str):
+            b = e["biomes"]; bs = btag(b.lstrip("#")) if (b.startswith("#") or (tuple(b.lstrip("#").split(":", 1)) in btags_raw)) else {b}
+            res.setdefault(e["type"], set()).update(bs)
     # Vanilla Backport sulfur cubes: spawned by code in the Sulfur Caves biome when has_sulfur_cubes = true
     try: vb = tomllib.load(open(os.path.join(INST, "config", "vanillabackport-common.toml"), "rb"))
     except Exception: vb = {}
@@ -223,10 +240,11 @@ def main():
             n = name("item", it)
             if n and [n, it] not in drops: drops.append([n, it])
         info["drops"] = drops
-        bs = sorted(sp.get(mid, set()), key=lambda b: (not b.startswith("minecraft:"), name("biome", b) or b))
+        bs = sorted((b for b in sp.get(mid, set()) if b in biome_ids), key=lambda b: (not b.startswith("minecraft:"), name("biome", b) or b))
         info["biomes"] = [[name("biome", b) or b.split(":")[1].replace("_", " "), b] for b in bs]
         if not bs:
             if ns == "dmr": info["spawn_note"] = "이 서버 설정에서는 야생 드래곤이 자연 생성되지 않습니다(enable_natural_dragon_spawns = false). 알로만 얻습니다."
+            elif mid == "hybrid_aquatic:goldfish": info["spawn_note"] = "자연 생성되지 않습니다. 비단잉어 두 마리를 번식시켜 얻습니다."
             elif ns == "alexsmobs": info["spawn_note"] = "이 PC의 Alex's Mobs 스폰 설정은 1.21에 없는 옛 바이옴 태그(예: c:is_dry_overworld)를 가리켜서, 조건에 맞는 바이옴이 없습니다. 서버 설정이 다르면 생성될 수 있습니다."
             else: info["spawn_note"] = "바이옴에서 저절로 생성되지 않습니다. 구조물이나 특수한 조건으로만 나타납니다."
         out[mid] = info

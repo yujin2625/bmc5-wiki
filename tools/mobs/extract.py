@@ -123,7 +123,7 @@ for path, d in jeb:
 
 # extra tags for mobs JEB doesn't cover
 extra = {}
-for t in ["minecraft:fishes", "minecraft:meat", "minecraft:happy_ghast_food", "minecraft:happy_ghast_tempt_items", "minecraft:sulfur_cube_food",
+for t in ["hybrid_aquatic:small_fish", "minecraft:fishes", "minecraft:meat", "minecraft:happy_ghast_food", "minecraft:happy_ghast_tempt_items", "minecraft:sulfur_cube_food",
           "aether:moa_food_items", "aether:moa_temptation_items", "deep_aether:quail_food",
           "friendsandfoes:crab_tempt_items", "friendsandfoes:glare_food_items", "friendsandfoes:glare_tempt_items",
           "minecraft:armadillo_food", "minecraft:sniffer_food", "minecraft:villager_plantable_seeds"]:

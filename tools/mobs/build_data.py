@@ -9,7 +9,7 @@ raw = json.load(open(os.path.join(HERE, "data.json"), encoding="utf-8"))
 MODS = {
     "minecraft": "바닐라", "alexsmobs": "Alex's Mobs", "aether": "에테르", "deep_aether": "Deep Aether",
     "twilightforest": "황혼의 숲", "friendsandfoes": "Friends & Foes", "vanillabackport": "Vanilla Backport",
-    "dmr": "Dragon Mounts",
+    "dmr": "Dragon Mounts", "hybrid_aquatic": "Hybrid Aquatic",
 }
 AETHER_KO = {"Blue Berry": "블루 베리", "Golden Grass Seeds": "황금 잔디 씨앗", "Aechor Petal": "에이커 꽃잎",
              "Aerbunny": "에어버니", "Flying Cow": "날아다니는 소", "Phyg": "피그", "Sheepuff": "쉽퍼프",
@@ -269,6 +269,21 @@ add("aether:moa", "모아", "Moa", "aether", [
      "note": "플레이어가 키운 어른 모아만 안장을 얹을 수 있습니다. 야생 모아에는 안장을 얹을 수 없습니다. 자연의 지팡이로 앉기·따라오기를 바꿉니다. Protect Your Moa 애드온으로 모아 갑옷과 상자도 달 수 있습니다."},
     {"k": KIND_BREED, "items": [], "no": True,
      "note": "번식할 수 없습니다. 대신 아무도 타지 않은 어른 모아가 6000~12000틱(5~10분)마다 자기 색 알을 낳습니다."}], [KIND_HATCH, KIND_GROW, KIND_EGG], "인큐베이터 앰브로시움 횃불")
+# Hybrid Aquatic: only these six register a breed goal and return a baby (BaseWaterAnimal.mobInteract -> setInLove,
+# WaterAnimalBreedGoal / CarpBreedGoal). Other HA mobs accept food but never mate (getBreedOffspring returns null).
+HA_NAME = lambda p: raw["ents"].get("hybrid_aquatic:" + p) or p
+HA_COMMON = "다 자란 개체에게 먹이를 주면 사랑 모드가 되고, 근처의 같은 종과 짝지어 새끼를 낳습니다. 새끼에게 주면 빨리 자랍니다. 길들이는 기능은 없습니다."
+for p, en_name, food, extra_note in [
+    ("carp", "Carp", [["밀", "minecraft:wheat"]], "비단잉어 두 마리를 번식시키면 1/2 확률로 금붕어가, 나머지는 잉어가 태어납니다(CarpEntity.getBreedOffspring)."),
+    ("goldfish", "Goldfish", [["밀", "minecraft:wheat"]], "자연 생성되지 않고, 비단잉어 두 마리를 번식시켜 얻습니다."),
+    ("dugong", "Dugong", [["해초", "minecraft:seagrass"]], ""),
+    ("manatee", "Manatee", [["해초", "minecraft:seagrass"]], ""),
+    ("orca", "Orca", ex("hybrid_aquatic:small_fish"), "작은 물고기 태그에 든 Hybrid Aquatic 물고기를 줍니다."),
+    ("otter", "Otter", [["조개 (Clam)", "hybrid_aquatic:clam"]], ""),
+]:
+    add("hybrid_aquatic:" + p, HA_NAME(p), en_name, "hybrid_aquatic",
+        [{"k": KIND_BREED, "items": with_icons(food), "note": (HA_COMMON + " " + extra_note).strip()}], [KIND_BREED], "물고기 바다")
+
 for mm in mobs:
     if mm["id"] == "deep_aether:quail":
         mm["s"][0]["items"] = with_icons(ex("deep_aether:quail_food"))
@@ -335,7 +350,7 @@ if os.path.exists(INFO):
         mm["i"] = i
         mm["q"] = (mm.get("q", "") + " " + " ".join(i["biomes"]) + " " + " ".join(d[0] for d in i["drops"])).strip()
 
-order = {"minecraft": 0, "vanillabackport": 1, "alexsmobs": 2, "friendsandfoes": 3, "twilightforest": 4, "aether": 5, "deep_aether": 6, "dmr": 7}
+order = {"minecraft": 0, "vanillabackport": 1, "alexsmobs": 2, "friendsandfoes": 3, "twilightforest": 4, "hybrid_aquatic": 5, "aether": 6, "deep_aether": 7, "dmr": 8}
 mobs.sort(key=lambda x: (order.get(x["m"], 9), x["n"]))
 out = {"mods": MODS, "mobs": mobs, "icons": icons}
 json.dump(out, open(os.path.join(HERE, "wiki.json"), "w", encoding="utf-8"), ensure_ascii=False)
