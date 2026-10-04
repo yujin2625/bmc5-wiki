@@ -84,32 +84,69 @@ def items(lst):
 def by_ids(ids, names):
     return items([{"id": i, "name": n} for i, n in zip(ids, names)])
 
-# ---------- curated notes for vanilla & known mechanics ----------
+# ---------- curated notes, each checked against 1.21.1 bytecode (client-1.21.1-...-srg.jar, Mojang names) ----------
 NOTE = {
-    "minecraft:wolf": {"tame": "뼈다귀를 여러 번 주면 빨간 목줄이 생기며 길들여집니다.", "breed": "길들인 늑대끼리, 체력이 가득 찬 상태에서 고기류를 줍니다."},
-    "minecraft:cat": {"tame": "생선을 들고 가만히 있으면 다가옵니다. 다가오면 생선을 주세요. 마을 고양이만 길들일 수 있습니다."},
-    "minecraft:parrot": {"tame": "씨앗을 줍니다. 쿠키를 주면 죽으니 절대 주지 마세요.", "breed": "앵무새는 번식할 수 없습니다."},
-    "minecraft:horse": {"tame": "빈손으로 여러 번 올라타면 됩니다. 먹이를 주면 기분(temper)이 올라 더 빨리 길들여집니다.", "breed": "길들인 말 두 마리에게 황금 당근이나 황금 사과를 줍니다. 말 + 당나귀 = 노새."},
-    "minecraft:donkey": {"tame": "말과 같습니다. 여러 번 올라타서 길들이고 상자를 달 수 있습니다.", "breed": "길들인 당나귀끼리 황금 당근이나 황금 사과를 줍니다."},
+    "minecraft:wolf": {"tame": "뼈다귀를 줄 때마다 1/3 확률로 길들여집니다(Wolf.tryToTame).",
+                       "breed": "길들인 늑대끼리만 번식합니다. 체력이 닳아 있으면 고기를 먹고 회복만 하므로 체력이 가득 찬 상태에서 주세요. Revamped Wolf 모드로 늑대 갑옷도 입힐 수 있습니다."},
+    "minecraft:cat": {"tame": "생선을 들고 있으면 다가옵니다. 생선을 줄 때마다 1/3 확률로 길들여집니다(Cat.tryToTame). 마을 고양이와 마녀의 집 고양이 모두 됩니다."},
+    "minecraft:parrot": {"tame": "씨앗을 줄 때마다 1/10 확률로 길들여집니다. 쿠키를 주면 독에 걸려 죽으니 주지 마세요.", "breed": "앵무새는 번식할 수 없습니다."},
+    "minecraft:horse": {"tame": "빈손으로 여러 번 올라타면 길들여집니다. 이 먹이를 주면 기분(temper)이 올라 더 빨리 길들여집니다: 밀·설탕·사과 +3, 황금 당근 +5, 황금 사과 +10.",
+                        "breed": "길들인 어른 말에게 황금 당근, 황금 사과, 마법이 부여된 황금 사과 중 하나를 줍니다. 밀·사과 같은 다른 먹이는 회복과 성장에만 쓰입니다. 말 + 당나귀 = 노새."},
+    "minecraft:donkey": {"tame": "말처럼 여러 번 올라타서 길들입니다. 길들인 뒤 상자를 달 수 있습니다.",
+                         "breed": "길들인 어른 당나귀에게 황금 당근이나 황금 사과를 줍니다. 말과 짝지으면 노새가 나옵니다."},
     "minecraft:mule": {"tame": "말처럼 여러 번 올라타서 길들입니다.", "breed": "노새는 번식할 수 없습니다. 말과 당나귀를 교배해서 얻습니다."},
-    "minecraft:llama": {"tame": "여러 번 올라타서 길들입니다. 밀이나 건초 더미를 주면 더 빨리 길들여집니다.", "breed": "길들인 라마끼리 건초 더미를 줍니다."},
-    "minecraft:trader_llama": {"tame": "떠돌이 상인이 사라진 뒤 라마처럼 올라타서 길들입니다."},
-    "minecraft:fox": {"trust": "야생 여우 두 마리를 달콤한 열매로 번식시키면, 태어난 새끼가 플레이어를 신뢰해 따라옵니다. 어른 여우는 길들일 수 없습니다."},
-    "minecraft:ocelot": {"trust": "생선을 들고 천천히 다가가 먹이를 주면 신뢰해서 도망가지 않습니다. 고양이처럼 길들여지지는 않습니다."},
-    "minecraft:turtle": {"breed": "번식한 거북이 태어난 해변으로 돌아가 모래 위에 알을 낳습니다."},
-    "minecraft:sniffer": {"breed": "알을 낳습니다. 처음 스니퍼 알은 바다 폐허의 수상한 모래를 붓으로 털어서 얻습니다."},
-    "minecraft:frog": {"breed": "물에 개구리알을 낳습니다. 올챙이가 자란 바이옴에 따라 개구리 색이 정해집니다."},
+    "minecraft:llama": {"tame": "여러 번 올라타서 길들입니다. 밀(+3)이나 건초 더미(+6)를 주면 더 빨리 길들여집니다.",
+                        "breed": "길들인 어른 라마에게 건초 더미를 줍니다. 밀로는 번식하지 않습니다."},
+    "minecraft:trader_llama": {"tame": "라마처럼 여러 번 올라타서 길들입니다. 길들이거나, 끈으로 직접 묶거나, 플레이어가 타고 있으면 떠돌이 상인과 함께 사라지지 않습니다.",
+                               "breed": "길들인 상인 라마에게 건초 더미를 줍니다. 새끼는 일반 라마로 태어납니다."},
+    "minecraft:fox": {"trust": "야생 여우 두 마리를 열매로 번식시키면, 새끼는 부모에게 먹이를 준 플레이어를 신뢰해서 도망가지 않고 지켜 줍니다. 어른 여우는 길들일 수 없습니다."},
+    "minecraft:ocelot": {"trust": "생선을 들고 있으면 다가옵니다. 3칸 안에 왔을 때 생선을 주면 1/3 확률로 신뢰해서 더는 도망가지 않습니다. 고양이처럼 길들여지지는 않습니다."},
+    "minecraft:turtle": {"breed": "번식한 거북이 태어난 해변(집)으로 돌아가 모래 위에 알을 낳습니다."},
+    "minecraft:sniffer": {"breed": "번식하면 스니퍼 알을 떨어뜨립니다. 처음 스니퍼 알은 따뜻한 바다 폐허의 수상한 모래를 붓으로 털어서 얻습니다."},
+    "minecraft:frog": {"breed": "물에 개구리알을 낳습니다. 올챙이가 개구리로 자라는 곳의 바이옴에 따라 색이 정해집니다(추운 곳·따뜻한 곳·그 외)."},
     "minecraft:axolotl": {"breed": "열대어 양동이를 주면 빈 물 양동이를 돌려받습니다."},
-    "minecraft:panda": {"breed": "근처 5칸 안에 대나무 블록이 8개 이상 있어야 번식합니다."},
-    "minecraft:bee": {"breed": "꽃을 줍니다. 모드 꽃 대부분도 됩니다."},
-    "minecraft:camel": {"tame": "안장만 얹으면 바로 탈 수 있습니다.", "breed": "선인장을 줍니다."},
+    "minecraft:panda": {"breed": "판다 주변 가로세로 8칸, 높이 3칸 안에 대나무가 하나라도 심어져 있어야 짝을 찾습니다."},
+    "minecraft:bee": {"breed": "꽃을 줍니다. 꽃 태그에 들어 있는 모드 꽃도 됩니다."},
+    "minecraft:camel": {"tame": "길들일 필요 없이 안장만 얹으면 바로 탈 수 있습니다.", "breed": "선인장을 줍니다."},
     "minecraft:strider": {"tame": "안장을 얹고 뒤틀린 균 낚싯대로 조종합니다."},
     "minecraft:pig": {"tame": "안장을 얹고 당근 낚싯대로 조종합니다."},
-    "minecraft:allay": {"tame": "아이템을 건네주면 그 아이템을 모아다 줍니다.", "dup": "주크박스에서 음악이 나오는 동안 자수정 조각을 주면 한 마리가 더 생깁니다."},
+    "minecraft:allay": {"tame": "아이템을 건네주면 같은 아이템을 주워서 가져다줍니다.", "dup": "주크박스 음악에 맞춰 춤추는 동안 자수정 조각을 주면 한 마리가 더 생깁니다."},
     "minecraft:hoglin": {"breed": "진홍빛 균으로 번식합니다. 공격적이니 조심하세요."},
 }
+# breeding items where the JEB data lists the whole food tag but code only allows these (AbstractHorse/Llama.handleEating)
+BREED_OVERRIDE = {
+    "minecraft:horse": ["minecraft:golden_carrot", "minecraft:golden_apple", "minecraft:enchanted_golden_apple"],
+    "minecraft:donkey": ["minecraft:golden_carrot", "minecraft:golden_apple", "minecraft:enchanted_golden_apple"],
+    "minecraft:llama": ["minecraft:hay_block"],
+    "minecraft:trader_llama": ["minecraft:hay_block"],
+}
+BREED_OVERRIDE_NAMES = {"minecraft:golden_carrot": "황금 당근", "minecraft:golden_apple": "황금 사과",
+                        "minecraft:enchanted_golden_apple": "마법이 부여된 황금 사과", "minecraft:hay_block": "건초 더미"}
 
 KIND_TAME = "길들이기"; KIND_BREED = "번식"; KIND_TRUST = "신뢰"; KIND_EGG = "알"; KIND_DUP = "복제"; KIND_HATCH = "부화"; KIND_BUILD = "소환"; KIND_GROW = "새끼 키우기"
+
+
+# Alex's Mobs / Friends & Foes / Aether taming notes, checked in each entity's mobInteract/tick/onGetItem bytecode.
+# "던져 주기" = drop the item on the ground; the mob picks it up, eats it, then rolls the chance.
+AM_TAME = {
+    "alexsmobs:bald_eagle": "물고기 기름을 손으로 줄 때마다 1/2 확률로 길들여집니다. 매 눈가리개는 길들인 어른에게만 씌울 수 있고, 생선은 다친 독수리 회복용입니다.",
+    "alexsmobs:capuchin_monkey": "바나나를 손으로 주거나 던져 주면 1/5 확률로 길들여집니다.",
+    "alexsmobs:kangaroo": "당근을 손으로 줍니다. 10번까지는 길들여지지 않고, 그 뒤로는 1/2 확률, 15번을 넘기면 반드시 길들여집니다.",
+    "alexsmobs:komodo_dragon": "썩은 살점을 한 묶음째 손으로 주면 묶음 전체를 먹습니다. 묶음 개수가 59~73 사이 무작위 값보다 많아야 길들여지므로, 64개 한 묶음으로 약 37.5% 확률입니다.",
+    "alexsmobs:mantis_shrimp": "열대어를 손으로 줍니다. 10번 이후 1/6 확률, 30번을 넘기면 반드시 길들여집니다.",
+    "alexsmobs:mimic_octopus": "바닷가재 꼬리를 손으로 줍니다. 5번 이후 1/2 확률, 8번을 넘기면 반드시 길들여집니다. 다른 블록을 흉내 내는 중에는 길들여지지 않습니다.",
+    "alexsmobs:mudskipper": "바닷가재 꼬리를 손으로 줄 때마다 1/2 확률로 길들여집니다.",
+    "alexsmobs:sugar_glider": "달콤한 열매를 손으로 줄 때마다 1/2 확률로 길들여집니다.",
+    "alexsmobs:tarantula_hawk": "거미 눈을 손으로 줍니다. 15번째부터 1/6 확률, 25번을 넘기면 반드시 길들여집니다.",
+    "alexsmobs:warped_toad": "진홍빛 모기 유충을 손으로 줄 때마다 1/3 확률로 길들여집니다.",
+    "alexsmobs:flutter": "아직 먹지 않은 종류의 꽃을 하나씩 손으로 줍니다. 서로 다른 꽃을 4종류 넘게 먹으면 1/3 확률, 7종류 넘게 먹으면 반드시 길들여집니다.",
+    "alexsmobs:crow": "호박씨를 땅에 던져 주면 주워 먹고 30% 확률로 길들여집니다. 손으로는 줄 수 없습니다.",
+    "alexsmobs:gorilla": "바나나를 땅에 던져 주면 주워 먹고 30% 확률로 길들여집니다. 손으로는 줄 수 없습니다.",
+    "alexsmobs:raccoon": "달걀을 땅에 던져 주면 물가로 가져가 씻은 뒤 먹고 30% 확률로 길들여집니다.",
+    "alexsmobs:cosmaw": "우주 대구를 던져 주거나 손으로 건네면 30% 확률로 길들여집니다.",
+    "alexsmobs:elephant": "아카시아나무 꽃을 던져 주거나 건네면 1/3 확률로 길들여집니다. 상아가 있는 어른 코끼리는 길들일 수 없고, 상아 없는 코끼리나 새끼만 됩니다.",
+    "alexsmobs:grizzly_bear": "먼저 꿀(꿀이 든 병·벌집 조각·꿀 블록 등)을 먹여 꿀에 취한 상태(약 35초)로 만든 뒤, 그동안 연어를 땅에 던져 주면 30% 확률로 길들여집니다.",
+}
 
 mobs = []
 def add(id, name, en, mod, sections, tags, extra_search=""):
@@ -141,8 +178,11 @@ for m in raw["mobs"]:
             sec["extraLabel"] = "추가로 필요"
         if "temper" in meth and "tame" not in note:
             sec["note"] = "여러 번 올라타서 길들입니다. 이 먹이를 주면 기분이 올라 더 빨리 길들여집니다."
-        if not sec["note"] and mid.startswith("alexsmobs:"):
-            sec["note"] = "먹이를 여러 번 주면 길들여집니다. 몹에 따라 새끼만 길들일 수 있는 경우가 있습니다."
+        if mid in AM_TAME:
+            sec["note"] = AM_TAME[mid]
+        if mid == "alexsmobs:grizzly_bear":  # JEB has these reversed: salmon tames, honey is the prerequisite
+            sec["items"], sec["extra"] = items(tame_extra), items(tame_items)
+            sec["extraLabel"] = "먼저 먹일 것"
         secs.append(sec); tags.append(KIND_TAME)
     for e in meth.get("trusting", []):
         secs.append({"k": KIND_TRUST, "items": items(e["inputs"]), "note": note.get("trust", "")}); tags.append(KIND_TRUST)
@@ -150,10 +190,12 @@ for m in raw["mobs"]:
         ins = e["inputs"]
         if mid in FIX:
             ins = [{"id": i, "name": n} for i, n in zip(*FIX[mid])]
+        if mid in BREED_OVERRIDE:
+            ins = [{"id": i, "name": BREED_OVERRIDE_NAMES[i]} for i in BREED_OVERRIDE[mid]]
         sec = {"k": KIND_BREED, "items": items(ins), "note": note.get("breed", "")}
         if not ins:
-            if mid == "alexsmobs:rattlesnake": sec["note"] = "고기류를 줍니다."
-            elif mid == "alexsmobs:tasmanian_devil": sec["note"] = "고기류를 줍니다."
+            if mid == "alexsmobs:rattlesnake": sec["note"] = "음식 아이템이면 무엇이든 됩니다."
+            elif mid == "alexsmobs:tasmanian_devil": sec["note"] = "썩은 살점을 뺀 음식 아이템이면 무엇이든 됩니다. 썩은 살점을 주면 울부짖기만 합니다."
             else: continue
         if e["extra"]:
             sec["extra"] = items(e["extra"]); sec["extraLabel"] = "근처에 필요"
@@ -195,11 +237,11 @@ add("minecraft:villager", "주민", "Villager", "minecraft", [
      "note": "주민에게 음식을 던져 주세요. 한 마리당 빵 3개나 당근·감자·비트 12개가 필요합니다. 마을에 주인 없는 침대가 있어야 하고, 아기 한 명당 빈 침대가 하나 더 필요합니다."}],
     [KIND_BREED], "침대 마을")
 add("minecraft:skeleton_horse", "스켈레톤 말", "Skeleton Horse", "minecraft", [
-    {"k": KIND_TAME, "items": [], "note": "뇌우 때 스켈레톤 함정 말이 나타납니다. 다가가면 스켈레톤 기수 4명이 생기고, 기수를 처치하면 남은 말은 이미 길들여진 상태입니다."},
+    {"k": KIND_TAME, "items": [], "note": "뇌우 때 스켈레톤 함정 말이 나타납니다. 10칸 안으로 다가가면 번개가 치면서 스켈레톤 기수가 탄 말 4마리로 늘어납니다. 이 말들은 모두 이미 길들여진 상태라서 기수를 처치하면 안장을 얹고 바로 탈 수 있습니다(SkeletonTrapGoal)."},
     {"k": KIND_BREED, "items": [], "note": "번식할 수 없습니다.", "no": True}], [KIND_TAME])
 add("minecraft:happy_ghast", "행복한 가스트", "Happy Ghast", "vanillabackport", [
     {"k": KIND_HATCH, "items": with_icons([["마른 가스트", "minecraft:dried_ghast"]]),
-     "note": "마른 가스트 블록을 물속에 설치하면 시간이 지나 새끼 가스트(가스틀링)가 태어납니다."},
+     "note": "마른 가스트 블록을 물속에 설치하면 4단계에 걸쳐 물을 머금은 뒤 새끼 행복한 가스트가 태어납니다. 단계마다 5000틱이 걸려서 최소 약 17분이 걸립니다. 물 밖으로 꺼내면 한 단계씩 다시 마릅니다."},
     {"k": KIND_TAME, "items": with_icons(ex("minecraft:happy_ghast_food")),
      "note": "눈덩이를 주면 새끼가 빨리 자랍니다. 다 자라면 하네스를 씌워 최대 4명이 탈 수 있습니다."},
     {"k": KIND_BREED, "items": [], "note": "번식할 수 없습니다.", "no": True}], [KIND_HATCH, KIND_TAME], "하네스")
@@ -220,15 +262,26 @@ add("minecraft:sulfur_cube", "유황 큐브", "Sulfur Cube", "vanillabackport", 
     [KIND_GROW], "슬라임볼 양동이 유황 동굴")
 add("aether:moa", "모아", "Moa", "aether", [
     {"k": KIND_HATCH, "items": with_icons([["파란 모아 알", "aether:blue_moa_egg"], ["하얀 모아 알", "aether:white_moa_egg"], ["검은 모아 알", "aether:black_moa_egg"]]),
-     "note": "모아 알을 인큐베이터에 넣고 앰브로시움 횃불로 데우면 부화합니다. 부화시킨 플레이어의 모아가 됩니다."},
-    {"k": KIND_TAME, "items": with_icons(ex("aether:moa_food_items")), "note": "새끼 모아에게 에이커 꽃잎을 주면 자랍니다. 다 자란 모아에 안장을 얹어 탑니다."},
-    {"k": KIND_BREED, "items": [], "note": "번식할 수 없습니다. 알로만 얻습니다.", "no": True}], [KIND_HATCH, KIND_TAME])
+     "note": "모아 알을 인큐베이터에 넣고 앰브로시움 횃불을 연료로 넣으면 1000틱(약 50초) 뒤 부화합니다. 길들이는 개념은 없고, 인큐베이터에서 나온 모아는 '플레이어가 키운 모아'로 표시됩니다."},
+    {"k": KIND_GROW, "items": with_icons(ex("aether:moa_food_items")),
+     "note": "새끼는 저절로 자라지 않습니다. 가끔 배고픈 상태가 되는데, 그때마다 에이커 꽃잎을 주면 한 단계씩 자라고 3번 먹으면 어른이 됩니다. 다친 어른에게 주면 체력을 5 회복합니다."},
+    {"k": "타기", "items": with_icons([["안장", "minecraft:saddle"]]),
+     "note": "플레이어가 키운 어른 모아만 안장을 얹을 수 있습니다. 야생 모아에는 안장을 얹을 수 없습니다. 자연의 지팡이로 앉기·따라오기를 바꿉니다. Protect Your Moa 애드온으로 모아 갑옷과 상자도 달 수 있습니다."},
+    {"k": KIND_BREED, "items": [], "no": True,
+     "note": "번식할 수 없습니다. 대신 아무도 타지 않은 어른 모아가 6000~12000틱(5~10분)마다 자기 색 알을 낳습니다."}], [KIND_HATCH, KIND_GROW, KIND_EGG], "인큐베이터 앰브로시움 횃불")
 for mm in mobs:
     if mm["id"] == "deep_aether:quail":
         mm["s"][0]["items"] = with_icons(ex("deep_aether:quail_food"))
+        mm["s"][0]["note"] = "씨앗류를 줍니다. 닭처럼 5~10분마다 메추라기 알을 낳고, 알을 던지면 1/8 확률로 새끼가 나옵니다."
+    if mm["id"] in ("aether:phyg", "aether:flying_cow"):
+        mm["s"][0]["note"] = "다 자란 개체에 안장을 얹어 탈 수 있습니다(날개 달린 탈것)."
+    if mm["id"] == "friendsandfoes:crab":
+        mm["s"][0]["note"] = "번식하면 굴 자리에 게 알 블록(알 1~4개)을 낳고, 거북 알처럼 단계적으로 부화합니다."
+    if mm["id"] == "twilightforest:bighorn_sheep":
+        mm["s"][0]["note"] = "양과 같은 방식이라 새끼 털 색이 부모 색을 섞어서 나옵니다."
     if mm["id"] == "friendsandfoes:glare":
         mm["s"].insert(0, {"k": KIND_TAME, "items": with_icons(ex("friendsandfoes:glare_food_items")),
-                           "note": "발광 열매를 주면 길들여집니다. 길들인 글레어는 주변의 어두운 곳을 찾아 알려 줍니다."})
+                           "note": "야생 글레어에게 발광 열매를 줄 때마다 1/3 확률로 길들여집니다. 길들인 어른 글레어는 밤이나 하늘이 안 보이는 곳에서 주변의 어두운 곳을 찾아 날아가 알려 주고, 24칸 안의 몬스터를 10초 동안 발광 상태로 만듭니다. 번식은 길들인 글레어끼리만 되고, 새끼도 같은 주인에게 길들여진 채로 태어납니다."})
         mm["t"] = sorted(set(mm["t"] + [KIND_TAME]))
 
 for g in [("minecraft:iron_golem", "철 골렘", "Iron Golem", "철 블록 4개를 T자로 쌓고 머리에 조각된 호박을 올립니다.", [["철 블록", "minecraft:iron_block"], ["조각된 호박", "minecraft:carved_pumpkin"]]),
