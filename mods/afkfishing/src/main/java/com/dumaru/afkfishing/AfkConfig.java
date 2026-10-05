@@ -137,6 +137,9 @@ public final class AfkConfig {
     public static final ModConfigSpec.BooleanValue FARM_DEPOSIT_BEFORE_SLEEP = BUILDER
             .comment("자러 가기 전에 상자에 정리")
             .define("farmDepositBeforeSleep", true);
+    public static final ModConfigSpec.IntValue FARM_SCAN_ABOVE = BUILDER
+            .comment("농장 범위 위로 몇 칸까지 작물을 찾을지 (밧줄·막대에 올린 토마토처럼 높이 자라는 작물용)")
+            .defineInRange("farmScanAbove", 4, 1, 16);
     public static final ModConfigSpec.BooleanValue FARM_AUTO_CHESTS = BUILDER
             .comment("농장 범위(+여유 칸) 안의 상자·통에 자동으로 정리. 같은 아이템이 든 상자에 넣고, 처음 보는 아이템은 빈칸 있는 상자에 모아 넣음")
             .define("farmAutoChests", true);

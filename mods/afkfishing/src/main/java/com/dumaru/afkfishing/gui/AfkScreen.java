@@ -206,6 +206,9 @@ public class AfkScreen extends Screen {
         addRenderableWidget(toggle(left, y, "범위 안 상자에 자동 정리", AfkConfig.FARM_AUTO_CHESTS));
         addRenderableWidget(new IntSlider(right, y, AfkConfig.FARM_AUTO_CHEST_MARGIN, 0, 16, 1,
                 v -> Component.literal("상자 찾기 여유: 범위 +" + v + "칸")));
+        y += ROW_H;
+        addRenderableWidget(new IntSlider(left, y, AfkConfig.FARM_SCAN_ABOVE, 1, 16, 1,
+                v -> Component.literal("작물 찾는 높이: 범위 위 " + v + "칸")));
         return y + ROW_H;
     }
 
@@ -346,6 +349,13 @@ public class AfkScreen extends Screen {
             changed(data);
         }).bounds(right + COL_W - 80, y, 80, BTN_H).build());
         clearBlack.active = !data.blacklistChests.isEmpty();
+        y += ROW_H;
+        Button resetMethods = addRenderableWidget(Button.builder(Component.literal(
+                "작물별 수확 방법 기억 초기화 (" + data.harvestMethods.size() + "종)"), b -> {
+            data.harvestMethods.clear();
+            changed(data);
+        }).bounds(left, y, COL_W * 2 + 10, BTN_H).build());
+        resetMethods.active = !data.harvestMethods.isEmpty();
         return y + ROW_H;
     }
 

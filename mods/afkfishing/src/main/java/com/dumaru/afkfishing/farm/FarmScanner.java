@@ -55,7 +55,7 @@ public final class FarmScanner {
         }
         min = data.min();
         BlockPos m = data.max();
-        max = new BlockPos(m.getX(), m.getY() + 1, m.getZ());
+        max = new BlockPos(m.getX(), m.getY() + FarmData.scanAbove(), m.getZ());
         cursorX = min.getX();
         cursorY = min.getY();
         cursorZ = min.getZ();

@@ -38,6 +38,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.ShearsItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -651,7 +652,7 @@ public final class FarmController {
         if (best == null) {
             return null;
         }
-        TaskType type = best.kind() == Crops.Kind.GOURD || best.kind() == Crops.Kind.STACK ? TaskType.BREAK : TaskType.HARVEST;
+        TaskType type = methodFor(best).equals(METHOD_BREAK) ? TaskType.BREAK : TaskType.HARVEST;
         return new Task(type, best.id(), best.actionPos(), null);
     }
 
@@ -790,13 +791,24 @@ public final class FarmController {
             setState(State.PLAN); // 거뒀거나 그사이 다른 이유로 바뀜
             return;
         }
+        String method = methodFor(live);
         if (stateTicks > ACTION_TIMEOUT) {
+            // 이 방법으로 안 되면 다음 방법(가위 → 부수기)을 해 보고, 되는 방법을 작물마다 기억한다.
+            String next = nextMethod(method, player);
+            if (next != null && player.getFoodData().getFoodLevel() > 0) {
+                data.harvestMethods.put(task.cropId, next);
+                lastMessage = Crops.displayName(task.cropId) + " 수확 방법 → " + methodLabel(next);
+                task = new Task(next.equals(METHOD_BREAK) ? TaskType.BREAK : TaskType.HARVEST, task.cropId, task.pos, null);
+                setState(actionState(task.type));
+                return;
+            }
             markFailed(task.pos);
             lastMessage = Crops.displayName(task.cropId) + " 수확 실패 " + task.pos.toShortString();
             setState(State.PLAN);
             return;
         }
-        if (!holdHarvestTool(mc, player)) {
+        boolean holding = method.equals(METHOD_SHEARS) ? holdShears(mc, player) : holdHarvestTool(mc, player);
+        if (!holding) {
             return; // 도구를 손에 드는 중
         }
         Vec3 hit = Vec3.atCenterOf(task.pos);
@@ -815,6 +827,52 @@ public final class FarmController {
             }
             actionTick = stateTicks;
         }
+    }
+
+    // ---- 수확 방법 (우클릭 / 가위 / 부수기) ----
+
+    private static final String METHOD_CLICK = "click";
+    private static final String METHOD_SHEARS = "shears";
+    private static final String METHOD_BREAK = "break";
+
+    /** 이 작물을 거두는 방법: 해 보고 기억한 방법 → 작물 종류에 따른 기본값. */
+    private String methodFor(Crops.CropAt crop) {
+        String learned = data.harvestMethods.get(crop.id());
+        if (learned != null) {
+            return learned;
+        }
+        if (crop.kind() == Crops.Kind.GOURD || crop.kind() == Crops.Kind.STACK) {
+            return METHOD_BREAK;
+        }
+        return crop.shears() ? METHOD_SHEARS : METHOD_CLICK;
+    }
+
+    /**
+     * 지금 방법이 안 될 때 다음에 해 볼 방법. 더 없으면 null.
+     * 부수기는 씨앗으로 다시 심을 수 있는 작물만 (덤불 등을 부수면 영영 없어지므로).
+     */
+    private String nextMethod(String method, LocalPlayer player) {
+        boolean hasShears = InvUtil.find(player, s -> s.getItem() instanceof ShearsItem) >= 0;
+        boolean replantable = !Crops.seedOf(player.level(), task.cropId).isEmpty();
+        String breakOrNull = replantable ? METHOD_BREAK : null;
+        return switch (method) {
+            case METHOD_CLICK -> hasShears ? METHOD_SHEARS : breakOrNull;
+            case METHOD_SHEARS -> breakOrNull;
+            default -> null;
+        };
+    }
+
+    private static String methodLabel(String method) {
+        return switch (method) {
+            case METHOD_SHEARS -> "가위로 우클릭";
+            case METHOD_BREAK -> "부수고 다시 심기";
+            default -> "우클릭";
+        };
+    }
+
+    private boolean holdShears(Minecraft mc, LocalPlayer player) {
+        int minDur = AfkConfig.FARM_TOOL_MIN_DURABILITY.get();
+        return InvUtil.ensureInHand(mc, player, s -> s.getItem() instanceof ShearsItem && InvUtil.hasDurability(s, minDur));
     }
 
     /** 수확할 때 들 도구: 괭이(옵션) → 빈손 → 그대로. 들 수 있으면 true. */

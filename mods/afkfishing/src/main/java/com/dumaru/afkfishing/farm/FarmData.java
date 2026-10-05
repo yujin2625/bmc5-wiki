@@ -80,6 +80,8 @@ public final class FarmData {
     public Map<String, String> plantMemory = new HashMap<>();
     /** 작물 id → 수확할 때 떨어진 걸로 확인된 아이템 id */
     public Map<String, Set<String>> learnedProducts = new HashMap<>();
+    /** 작물 id → 해 보고 알아낸 수확 방법 ("click", "shears", "break") */
+    public Map<String, String> harvestMethods = new HashMap<>();
 
     private transient String key;
 
@@ -134,6 +136,9 @@ public final class FarmData {
         if (data.plantMemory == null) {
             data.plantMemory = new HashMap<>();
         }
+        if (data.harvestMethods == null) {
+            data.harvestMethods = new HashMap<>();
+        }
         if (data.blacklistChests == null) {
             data.blacklistChests = new LinkedHashSet<>();
         }
@@ -170,17 +175,22 @@ public final class FarmData {
         return new BlockPos(Math.max(corner1[0], corner2[0]), Math.max(corner1[1], corner2[1]), Math.max(corner1[2], corner2[2]));
     }
 
-    /** 범위 상자. 작물은 지정한 높이 범위 위로 한 칸까지 본다 (농경지를 찍어도 작물이 들어가게). */
+    /** 작물을 찾는 높이: 지정한 범위 위로 몇 칸 더 (농경지를 찍어도 작물이, 밧줄 토마토처럼 높이 자란 것도 들어가게). */
+    public static int scanAbove() {
+        return com.dumaru.afkfishing.AfkConfig.FARM_SCAN_ABOVE.get();
+    }
+
+    /** 범위 상자 (작물을 찾는 높이까지 포함). */
     public AABB areaBox() {
         BlockPos min = min();
         BlockPos max = max();
-        return new AABB(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 2, max.getZ() + 1);
+        return new AABB(min.getX(), min.getY(), min.getZ(), max.getX() + 1, max.getY() + 1 + scanAbove(), max.getZ() + 1);
     }
 
     public long volume() {
         BlockPos min = min();
         BlockPos max = max();
-        return (long) (max.getX() - min.getX() + 1) * (max.getY() - min.getY() + 2) * (max.getZ() - min.getZ() + 1);
+        return (long) (max.getX() - min.getX() + 1) * (max.getY() - min.getY() + 1 + scanAbove()) * (max.getZ() - min.getZ() + 1);
     }
 
     public static int[] arr(BlockPos pos) {
