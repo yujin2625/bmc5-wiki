@@ -22,6 +22,8 @@ tools/
     stats.py           아이템 등록 코드를 실행해서 공격력·공격 속도·방어력·내구도를 읽음 (gearvm.py가 render/jvm.py를 확장)
     build_data.py      태그로 장비 분류, 레시피·전리품 테이블·인챈트 JSON을 읽어 wiki.json 생성
     ko.json            모드에 한국어가 없는 이름·설명·인챈트 설명의 번역 (직접 작성)
+mods/
+  afkfishing/          AFK 낚시 클라이언트 모드 (NeoForge, Gradle 프로젝트, 사이트 빌드와 무관)
 .github/workflows/     main에 push하면 Pages로 자동 배포
 ```
 
