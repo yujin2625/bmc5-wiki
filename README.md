@@ -24,6 +24,7 @@ tools/
     ko.json            모드에 한국어가 없는 이름·설명·인챈트 설명의 번역 (직접 작성)
 mods/
   afkfishing/          AFK 낚시 클라이언트 모드 (NeoForge, Gradle 프로젝트, 사이트 빌드와 무관)
+  mobalert/            주변 동물·몹 알림 클라이언트 모드 (NeoForge, Gradle 프로젝트, 사이트 빌드와 무관)
 .github/workflows/     main에 push하면 Pages로 자동 배포
 ```
 

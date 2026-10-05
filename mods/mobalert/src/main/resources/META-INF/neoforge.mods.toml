@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="mobalert"
+version="${version}"
+displayName="Mob Alert"
+authors="Yujin"
+description='''
+클라이언트 전용: 지정한 동물/몹이 주변에 있으면 발광 강조 + HUD 방향 표시 + 알림.
+설정: K 키, 모드 목록의 '설정' 버튼, 또는 /mobalert 명령어
+'''
+
+[[mixins]]
+config="mobalert.mixins.json"
+
+[[dependencies.mobalert]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.mobalert]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="CLIENT"

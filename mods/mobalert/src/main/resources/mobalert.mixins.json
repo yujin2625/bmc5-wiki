@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.yujin.mobalert.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "MinecraftMixin",
+    "EntityMixin",
+    "EntityAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
