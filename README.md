@@ -25,6 +25,7 @@ tools/
 mods/
   afkfishing/          AFK 낚시 클라이언트 모드 (NeoForge, Gradle 프로젝트, 사이트 빌드와 무관)
   mobalert/            주변 동물·몹 알림 클라이언트 모드 (NeoForge, Gradle 프로젝트, 사이트 빌드와 무관)
+keybinds/              BMC5 키바인딩 저장본과 다른 PC 적용 스크립트
 .github/workflows/     main에 push하면 Pages로 자동 배포
 ```
 
