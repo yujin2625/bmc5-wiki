@@ -14,7 +14,7 @@ $utf8 = New-Object System.Text.UTF8Encoding($false)
 function Read-Lines($path) { [IO.File]::ReadAllText($path, $utf8) -split "\r?\n" | Where-Object { $_ -ne '' } }
 function Write-Lines($path, $lines) { [IO.File]::WriteAllText($path, (($lines -join "`r`n") + "`r`n"), $utf8) }
 
-if (-not (Test-Path $options)) { throw "options.txt not found: $options (run the game once, or set BMC5_DIR)" }
+if (-not (Test-Path -LiteralPath $options)) { throw "options.txt not found: $options (run the game once, or set BMC5_DIR)" }
 
 if ($Mode -eq 'export') {
     $keys = @(Read-Lines $options | Where-Object { $_ -like 'key_*' })
@@ -47,6 +47,6 @@ $added = @($wanted.Keys | Where-Object { -not $seen[$_] } | ForEach-Object { $wa
 $out = @($out) + $added
 
 $backup = "$options.bak-$(Get-Date -Format yyyyMMdd-HHmmss)"
-Copy-Item $options $backup
+Copy-Item -LiteralPath $options -Destination $backup
 Write-Lines $options $out
 Write-Host "Applied keybindings: $changed changed, $($added.Count) added. Backup: $backup"
