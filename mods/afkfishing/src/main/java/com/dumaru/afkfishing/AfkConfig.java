@@ -69,6 +69,9 @@ public final class AfkConfig {
     public static final ModConfigSpec.BooleanValue SLEEP_AT_NIGHT = BUILDER
             .comment("밤이 되면 인벤토리의 침낭(Comforts)을 펼쳐서 자고, 일어나면 침낭을 회수한 뒤 제자리로 돌아와 낚시를 이어감")
             .define("sleepAtNight", true);
+    public static final ModConfigSpec.IntValue BAG_SEARCH_RADIUS = BUILDER
+            .comment("침낭 펼칠 자리를 찾는 반경 (칸). 3칸보다 멀면 걸어가서 펼치고, 일어난 뒤 걸어서 돌아옴")
+            .defineInRange("bagSearchRadius", 3, 1, 10);
 
     public static final ModConfigSpec.BooleanValue SHOW_HUD = BUILDER
             .comment("화면에 상태 HUD 표시")

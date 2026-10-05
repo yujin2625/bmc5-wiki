@@ -15,6 +15,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -83,6 +84,7 @@ public final class FishingController {
     private static final int RETURN_TIMEOUT = 300;
     private static final int CHASE_ITEM_TICKS = 120; // 떨어진 침낭 아이템을 쫓아가는 최대 시간 (틱)
     private static final double RETURN_ARRIVE_DIST = 0.08;
+    private static final int APPROACH_TIMEOUT = 300; // 먼 침낭 자리까지 걸어가는 최대 시간 (틱)
 
     private final Random random = new Random();
     private final AntiAfkMover mover = new AntiAfkMover(random);
@@ -108,6 +110,8 @@ public final class FishingController {
     private BlockPos bagFoot;
     private BlockPos bagHead;
     private Vec3 fishingSpot;
+    private BagPlacement plannedBag;
+    private int approachTicks;
 
     // 통계
     private long startedAtMillis;
@@ -572,7 +576,17 @@ public final class FishingController {
         bagPlaced = false;
         bagFoot = null;
         bagHead = null;
+        plannedBag = null;
+        approachTicks = 0;
+        fishingSpot = Minecraft.getInstance().player.position();
         setState(State.SLEEP_PREP, 0);
+    }
+
+    /** 침낭 발 쪽 칸이 서버의 침대 사용 거리(Comforts: 수평 3, 수직 2) 안에 있는지. 여유를 조금 둔다. */
+    private static boolean inSleepRange(Vec3 playerPos, BlockPos foot) {
+        Vec3 c = Vec3.atBottomCenterOf(foot);
+        return Math.abs(c.x - playerPos.x) <= 2.7 && Math.abs(c.z - playerPos.z) <= 2.7
+                && Math.abs(c.y - playerPos.y) <= 1.9;
     }
 
     private void tickSleepPrep(Minecraft mc, LocalPlayer player) {
@@ -601,15 +615,46 @@ public final class FishingController {
         if (!ensureSleepingBagInHand(mc, player)) {
             return;
         }
-        BagPlacement placement = findBagPlacement(player);
-        if (placement == null) {
-            failSleep(player, "반경 3칸 안에 침낭을 펼칠 자리가 없음 (나란한 빈칸 2개 + 위 빈 공간 필요)");
+        if (plannedBag == null) {
+            plannedBag = findBagPlacement(player);
+            if (plannedBag == null) {
+                failSleep(player, "반경 " + AfkConfig.BAG_SEARCH_RADIUS.get()
+                        + "칸 안에 침낭을 펼칠 자리가 없음 (나란한 빈칸 2개 + 위 빈 공간 필요, 걸어갈 길에 물/낭떠러지 없어야 함)");
+                return;
+            }
+        }
+        // 침대 사용 거리 밖이면 먼저 걸어간다.
+        if (!inSleepRange(player.position(), plannedBag.foot())) {
+            if (player.isInWater() || player.isInLava()) {
+                mover.cancel();
+                stop("침낭 자리로 가다가 물/용암에 빠짐");
+                return;
+            }
+            if (++approachTicks > APPROACH_TIMEOUT) {
+                mover.cancel();
+                failSleep(player, "침낭 자리까지 가지 못함");
+                return;
+            }
+            player.setSprinting(false);
+            mover.walkTo(approachPoint(player.position(), plannedBag.foot()));
+            stateTicks = 0;
             return;
         }
+        mover.cancel();
+        if (approachTicks > 0 && stateTicks < 4) {
+            return; // 걸어온 뒤 멈춰서 서버에 위치가 반영될 때까지 잠깐 대기
+        }
+        BagPlacement placement = plannedBag;
         Direction dir = placement.dir();
         bagFoot = placement.foot();
         bagHead = bagFoot.relative(dir);
-        fishingSpot = player.position();
+        if (!isBagSpotFree(player.level(), bagFoot) || !isBagSpotFree(player.level(), bagHead)
+                || new AABB(bagFoot).minmax(new AABB(bagHead)).intersects(player.getBoundingBox())) {
+            bagFoot = null;
+            bagHead = null;
+            failSleep(player, "침낭 자리가 막힘");
+            return;
+        }
 
         // 침낭(침대)은 서버가 알고 있는 플레이어 방향으로 머리 쪽이 펼쳐진다.
         // UseItemOn 패킷에는 방향이 없으므로 회전 패킷을 먼저 보낸다.
@@ -630,7 +675,56 @@ public final class FishingController {
     private void failSleep(LocalPlayer player, String reason) {
         sleepRetryIn = SLEEP_RETRY_TICKS;
         notify(player, reason + " - 1분 뒤 다시 시도합니다.", ChatFormatting.GOLD);
-        setState(State.CASTING, 0);
+        // 침낭 자리로 걸어갔다가 실패했으면 낚시 자리로 돌아간다.
+        boolean moved = fishingSpot != null && fishingSpot.subtract(player.position()).horizontalDistance() > 0.3;
+        setState(moved ? State.RETURNING : State.CASTING, 0);
+    }
+
+    /** 발 쪽 칸 중앙에서 플레이어 쪽으로 2칸 떨어진 지점. 여기까지 걸어가면 침대 사용 거리 안에 든다. */
+    private static Vec3 approachPoint(Vec3 from, BlockPos foot) {
+        Vec3 c = Vec3.atBottomCenterOf(foot);
+        Vec3 back = new Vec3(from.x - c.x, 0, from.z - c.z);
+        double len = back.horizontalDistance();
+        if (len < 2.0) {
+            return from;
+        }
+        return c.add(back.scale(2.0 / len));
+    }
+
+    /**
+     * from에서 to까지 직선으로 걸어갈 수 있는지 대충 검사한다. 0.25칸 간격으로 짚어 가며
+     * 발 칸과 머리 칸이 비어 있고 물/용암이 없으며 발밑이 있는지 본다. 한 칸 오르내림은 허용.
+     */
+    private static boolean isWalkable(Level level, Vec3 from, Vec3 to) {
+        double len = to.subtract(from).horizontalDistance();
+        int steps = Math.max(1, (int) Math.ceil(len / 0.25));
+        int y = BlockPos.containing(from).getY();
+        for (int i = 1; i <= steps; i++) {
+            Vec3 p = from.lerp(to, i / (double) steps);
+            int x = Mth.floor(p.x);
+            int z = Mth.floor(p.z);
+            if (canStand(level, new BlockPos(x, y, z))) {
+                continue;
+            }
+            if (canStand(level, new BlockPos(x, y + 1, z))) {
+                y++;
+            } else if (canStand(level, new BlockPos(x, y - 1, z))) {
+                y--;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean canStand(Level level, BlockPos feet) {
+        BlockPos head = feet.above();
+        BlockPos below = feet.below();
+        return level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+                && level.getBlockState(head).getCollisionShape(level, head).isEmpty()
+                && level.getFluidState(feet).isEmpty() && level.getFluidState(head).isEmpty()
+                && !level.getBlockState(below).getCollisionShape(level, below).isEmpty()
+                && level.getFluidState(below).isEmpty();
     }
 
     private void tickSleeping(LocalPlayer player) {
@@ -732,27 +826,27 @@ public final class FishingController {
     }
 
     /**
-     * 침낭을 펼칠 자리(발 쪽 칸 + dir 방향 머리 쪽 칸)를 찾는다. 서버의 침대 사용 거리(수평 3칸, 수직 2칸) 안에서
-     * 가까운 자리를 고르고, 거리가 같으면 물 반대편(낚시 방향의 뒤)을 우선한다.
+     * 침낭을 펼칠 자리(발 쪽 칸 + dir 방향 머리 쪽 칸)를 설정한 반경 안에서 찾는다. 가까운 자리를 고르고,
+     * 비슷하면 물 반대편(낚시 방향의 뒤)을 우선한다. 침대 사용 거리(3칸) 밖의 자리는 걸어갈 길이 안전할 때만 쓴다.
      */
     private BagPlacement findBagPlacement(LocalPlayer player) {
         Level level = player.level();
         BlockPos feet = player.blockPosition();
         Vec3 water = Vec3.directionFromRotation(0, lockedYaw);
         AABB playerBox = player.getBoundingBox();
+        int radius = AfkConfig.BAG_SEARCH_RADIUS.get();
         BagPlacement best = null;
         double bestScore = Double.MAX_VALUE;
         for (int dy = -1; dy <= 1; dy++) {
-            for (int dx = -3; dx <= 3; dx++) {
-                for (int dz = -3; dz <= 3; dz++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
                     BlockPos foot = feet.offset(dx, dy, dz);
-                    // 침대 사용 거리: 플레이어 위치와 발 쪽 칸 바닥 중앙의 차이가 수평 3, 수직 2 이하
                     Vec3 footCenter = Vec3.atBottomCenterOf(foot);
-                    if (Math.abs(footCenter.x - player.getX()) > 2.9 || Math.abs(footCenter.z - player.getZ()) > 2.9
-                            || Math.abs(footCenter.y - player.getY()) > 1.9) {
+                    if (!isBagSpotFree(level, foot)) {
                         continue;
                     }
-                    if (!isBagSpotFree(level, foot)) {
+                    boolean needsWalk = !inSleepRange(player.position(), foot);
+                    if (needsWalk && !isWalkable(level, player.position(), approachPoint(player.position(), foot))) {
                         continue;
                     }
                     for (Direction dir : Direction.Plane.HORIZONTAL) {
@@ -766,7 +860,7 @@ public final class FishingController {
                         Vec3 offset = middle.subtract(player.position());
                         // 가까울수록, 물 반대편일수록 좋은 자리
                         double score = offset.horizontalDistance() + Math.max(0, offset.normalize().dot(water)) * 1.5
-                                + Math.abs(dy) * 0.5;
+                                + Math.abs(dy) * 0.5 + (needsWalk ? 2.0 : 0);
                         if (score < bestScore) {
                             bestScore = score;
                             best = new BagPlacement(foot, dir);

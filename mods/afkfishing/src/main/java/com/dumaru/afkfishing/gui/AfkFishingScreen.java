@@ -71,6 +71,9 @@ public class AfkFishingScreen extends Screen {
         y += ROW_H;
         addRenderableWidget(toggle(left, y, "밤에 침낭으로 자기", AfkConfig.SLEEP_AT_NIGHT));
         addRenderableWidget(toggle(right, y, "바늘 소진 시 정지", AfkConfig.STOP_WHEN_LURE_GONE));
+        y += ROW_H;
+        addRenderableWidget(new IntSlider(left, y, AfkConfig.BAG_SEARCH_RADIUS, 1, 10, 1,
+                v -> Component.literal("침낭 자리 반경: " + v + "칸")));
         y += ROW_H + 4;
 
         addRenderableWidget(Button.builder(Component.literal("통계 초기화"), b -> FishingController.INSTANCE.resetStats())
