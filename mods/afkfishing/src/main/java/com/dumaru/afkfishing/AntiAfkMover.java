@@ -224,6 +224,8 @@ public final class AntiAfkMover {
                     forward = (float) (f * scale);
                     left = (float) (l * scale);
                 }
+                // 침낭 자리에서 돌아올 때 한 칸 턱에 막히면 점프해서 넘는다.
+                jump = phase == Phase.WALK && player.horizontalCollision && player.onGround();
             }
             case JUMP -> jump = phaseTicks <= 1;
             default -> {

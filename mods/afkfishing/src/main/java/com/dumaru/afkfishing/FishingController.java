@@ -601,13 +601,13 @@ public final class FishingController {
         if (!ensureSleepingBagInHand(mc, player)) {
             return;
         }
-        Direction dir = findBagPlacement(player);
-        if (dir == null) {
-            failSleep(player, "주변에 침낭을 펼칠 평평한 빈자리가 없음");
+        BagPlacement placement = findBagPlacement(player);
+        if (placement == null) {
+            failSleep(player, "반경 3칸 안에 침낭을 펼칠 자리가 없음 (나란한 빈칸 2개 + 위 빈 공간 필요)");
             return;
         }
-        BlockPos feet = player.blockPosition();
-        bagFoot = feet.relative(dir);
+        Direction dir = placement.dir();
+        bagFoot = placement.foot();
         bagHead = bagFoot.relative(dir);
         fishingSpot = player.position();
 
@@ -728,37 +728,66 @@ public final class FishingController {
         return false; // 서버 반영 후 다음 틱에 펼친다
     }
 
-    /**
-     * 플레이어 바로 옆 칸(발 쪽)과 그 너머 칸(머리 쪽)에 침낭을 펼칠 수 있는 방향을 찾는다.
-     * 물 반대편(뒤) → 좌우 순으로 시도하고 물 쪽(앞)은 쓰지 않는다.
-     */
-    private Direction findBagPlacement(LocalPlayer player) {
-        Direction facing = Direction.fromYRot(lockedYaw);
-        Direction[] candidates = random.nextBoolean()
-                ? new Direction[]{facing.getOpposite(), facing.getClockWise(), facing.getCounterClockWise()}
-                : new Direction[]{facing.getOpposite(), facing.getCounterClockWise(), facing.getClockWise()};
-        Level level = player.level();
-        BlockPos feet = player.blockPosition();
-        for (Direction dir : candidates) {
-            BlockPos foot = feet.relative(dir);
-            BlockPos head = foot.relative(dir);
-            if (isBagSpotFree(level, foot) && isBagSpotFree(level, head)
-                    && level.getEntitiesOfClass(LivingEntity.class, new AABB(foot).minmax(new AABB(head))).isEmpty()) {
-                return dir;
-            }
-        }
-        return null;
+    private record BagPlacement(BlockPos foot, Direction dir) {
     }
 
-    /** 빈칸이고(물 없음), 위가 막혀 있지 않고, 발밑이 단단한 블록인지. */
+    /**
+     * 침낭을 펼칠 자리(발 쪽 칸 + dir 방향 머리 쪽 칸)를 찾는다. 서버의 침대 사용 거리(수평 3칸, 수직 2칸) 안에서
+     * 가까운 자리를 고르고, 거리가 같으면 물 반대편(낚시 방향의 뒤)을 우선한다.
+     */
+    private BagPlacement findBagPlacement(LocalPlayer player) {
+        Level level = player.level();
+        BlockPos feet = player.blockPosition();
+        Vec3 water = Vec3.directionFromRotation(0, lockedYaw);
+        AABB playerBox = player.getBoundingBox();
+        BagPlacement best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (int dy = -1; dy <= 1; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    BlockPos foot = feet.offset(dx, dy, dz);
+                    // 침대 사용 거리: 플레이어 위치와 발 쪽 칸 바닥 중앙의 차이가 수평 3, 수직 2 이하
+                    Vec3 footCenter = Vec3.atBottomCenterOf(foot);
+                    if (Math.abs(footCenter.x - player.getX()) > 2.9 || Math.abs(footCenter.z - player.getZ()) > 2.9
+                            || Math.abs(footCenter.y - player.getY()) > 1.9) {
+                        continue;
+                    }
+                    if (!isBagSpotFree(level, foot)) {
+                        continue;
+                    }
+                    for (Direction dir : Direction.Plane.HORIZONTAL) {
+                        BlockPos head = foot.relative(dir);
+                        AABB area = new AABB(foot).minmax(new AABB(head));
+                        if (area.intersects(playerBox) || !isBagSpotFree(level, head)
+                                || !level.getEntitiesOfClass(LivingEntity.class, area, e -> e != player).isEmpty()) {
+                            continue;
+                        }
+                        Vec3 middle = footCenter.add(Vec3.atBottomCenterOf(head)).scale(0.5);
+                        Vec3 offset = middle.subtract(player.position());
+                        // 가까울수록, 물 반대편일수록 좋은 자리
+                        double score = offset.horizontalDistance() + Math.max(0, offset.normalize().dot(water)) * 1.5
+                                + Math.abs(dy) * 0.5;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            best = new BagPlacement(foot, dir);
+                        }
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** 빈칸이고(물 없음), 위가 막혀 있지 않고, 발밑에 밟을 수 있는 블록이 있는지. */
     private static boolean isBagSpotFree(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         BlockPos above = pos.above();
         BlockState aboveState = level.getBlockState(above);
         BlockPos below = pos.below();
+        BlockState belowState = level.getBlockState(below);
         return state.canBeReplaced() && state.getFluidState().isEmpty()
                 && aboveState.getCollisionShape(level, above).isEmpty() && aboveState.getFluidState().isEmpty()
-                && level.getBlockState(below).isFaceSturdy(level, below, Direction.UP);
+                && !belowState.getCollisionShape(level, below).isEmpty() && belowState.getFluidState().isEmpty();
     }
 
     /** 펼쳐 둔 침낭 블록 위치 (머리 쪽 우선). 없으면 null. */
