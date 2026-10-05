@@ -202,6 +202,10 @@ public class AfkScreen extends Screen {
         y += ROW_H;
         addRenderableWidget(toggle(left, y, "범위 테두리 표시", AfkConfig.FARM_SHOW_AREA));
         addRenderableWidget(toggle(right, y, "AFK 방지 이동", AfkConfig.ANTI_AFK));
+        y += ROW_H;
+        addRenderableWidget(toggle(left, y, "범위 안 상자에 자동 정리", AfkConfig.FARM_AUTO_CHESTS));
+        addRenderableWidget(new IntSlider(right, y, AfkConfig.FARM_AUTO_CHEST_MARGIN, 0, 16, 1,
+                v -> Component.literal("상자 찾기 여유: 범위 +" + v + "칸")));
         return y + ROW_H;
     }
 
@@ -473,7 +477,8 @@ public class AfkScreen extends Screen {
         g.drawCenteredString(font, area, width / 2, y, 0xAAAAAA);
         y += 10;
         long otherChests = data.chests.stream().filter(c -> c.catchAll).count();
-        String extra = "작물 상자 " + data.chests.stream().filter(c -> !c.catchAll).count() + "개 · 기타 상자 " + otherChests + "개 · 낚시 자리 "
+        String auto = AfkConfig.FARM_AUTO_CHESTS.get() && data.hasArea() ? " · 범위 안 자동 상자 " + FarmController.INSTANCE.autoChestCount() + "개" : "";
+        String extra = "작물 상자 " + data.chests.stream().filter(c -> !c.catchAll).count() + "개 · 기타 상자 " + otherChests + "개" + auto + " · 낚시 자리 "
                 + (data.fishSpot == null ? "없음" : "지정됨");
         g.drawCenteredString(font, extra, width / 2, y, 0xAAAAAA);
         if (cropList(data).isEmpty()) {

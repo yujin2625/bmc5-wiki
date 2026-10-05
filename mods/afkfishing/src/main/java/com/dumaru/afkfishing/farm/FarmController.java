@@ -46,6 +46,15 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
+import net.minecraft.world.level.block.state.properties.ChestType;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -286,8 +295,13 @@ public final class FarmController {
         if (FishingController.INSTANCE.isRunning()) {
             FishingController.INSTANCE.stop("자동 농사 시작");
         }
-        if (data.chests.isEmpty()) {
-            notify(player, "지정한 상자가 없어서 수확물을 정리하지 않습니다.", ChatFormatting.GOLD);
+        autoCacheAt = 0;
+        autoMemory.clear();
+        int autoCount = autoChests(player).size();
+        if (data.chests.isEmpty() && autoCount == 0) {
+            notify(player, "지정한 상자도, 범위 안 상자도 없어서 수확물을 정리하지 않습니다.", ChatFormatting.GOLD);
+        } else if (autoCount > 0) {
+            notify(player, "범위 안 상자 " + autoCount + "개에 자동으로 정리합니다.", ChatFormatting.GRAY);
         }
         lastHealth = player.getHealth();
         harvestRound = false;
@@ -1024,7 +1038,7 @@ public final class FarmController {
     // ---- 상자 정리 ----
 
     private boolean depositDue(LocalPlayer player) {
-        if (data.chests.isEmpty()) {
+        if (data.chests.isEmpty() && autoChests(player).isEmpty()) {
             return false;
         }
         long now = System.currentTimeMillis();
@@ -1041,7 +1055,7 @@ public final class FarmController {
                 return true;
             }
         }
-        return false;
+        return !autoChests(player).isEmpty() && !slotsFor(player, AUTO_PROBE, -1).isEmpty();
     }
 
     /** 상자 정리를 시작한다. 넣을 게 없으면 false. */
@@ -1055,6 +1069,24 @@ public final class FarmController {
         }
         // 작물 상자부터, 기타 상자는 나중에
         depositQueue.sort(Comparator.comparing(c -> c.catchAll));
+        // 남은 건 범위 안 상자에 자동으로: 같은 아이템이 든 상자 → 아직 안 열어 본 상자 → 나머지, 각각 가까운 순
+        List<FarmData.ChestEntry> autos = new ArrayList<>(autoChests(player));
+        if (!autos.isEmpty() && !slotsFor(player, AUTO_PROBE, -1).isEmpty()) {
+            Set<Item> mine = new HashSet<>();
+            for (int slot : slotsFor(player, AUTO_PROBE, -1)) {
+                mine.add(player.getInventory().getItem(slot).getItem());
+            }
+            Vec3 from = player.position();
+            autos.sort(Comparator.<FarmData.ChestEntry>comparingInt(c -> {
+                AutoChest known = autoMemory.get(c.pos().asLong());
+                if (known == null) {
+                    return 1;
+                }
+                return known.contents.stream().anyMatch(mine::contains) ? 0 : 2;
+            }).thenComparingDouble(c -> Vec3.atCenterOf(c.pos()).distanceToSqr(from)));
+            depositQueue.addAll(autos);
+        }
+        newHomes.clear();
         depositLeftovers = false;
         if (depositQueue.isEmpty()) {
             nextDepositAt = System.currentTimeMillis() + AfkConfig.FARM_DEPOSIT_MINUTES.get() * 60_000L;
@@ -1068,7 +1100,7 @@ public final class FarmController {
         // 앞 상자가 가득 차서 못 넣은 게 있으면, 같은 작물의 다른 상자가 큐에 남아 있을 때 거기에 넣는다.
         while (!depositQueue.isEmpty()) {
             FarmData.ChestEntry chest = depositQueue.remove(0);
-            if (slotsFor(player, chest, -1).isEmpty()) {
+            if (slotsFor(player, chest, -1).isEmpty() || (chest.auto && !worthVisiting(player, chest))) {
                 continue;
             }
             depositChest = chest;
@@ -1156,7 +1188,8 @@ public final class FarmController {
             depositPending = -1;
         }
         if (stateTicks - actionTick == 3) {
-            depositSlots.addAll(slotsFor(player, depositChest, menu.containerId));
+            depositSlots.addAll(depositChest.auto ? autoSlots(player, menu, depositChest.pos())
+                    : slotsFor(player, depositChest, menu.containerId));
         }
         if (stateTicks - actionTick < 4) {
             return; // 상자 내용이 동기화될 때까지
@@ -1195,7 +1228,8 @@ public final class FarmController {
         for (Map.Entry<Item, List<int[]>> e : byItem.entrySet()) {
             Item item = e.getKey();
             int total = InvUtil.count(player, item);
-            int keep = keepCount(player, item, chest.catchAll);
+            // 자동 상자: 수확물은 씨앗·음식만 남기고, 그 밖의 건 시작할 때 갖고 있던 만큼 남긴다
+            int keep = keepCount(player, item, chest.auto ? !productCache.containsKey(item) : chest.catchAll);
             List<int[]> stacks = e.getValue();
             stacks.sort((a, b) -> b[1] - a[1]);
             for (int[] s : stacks) {
@@ -1223,12 +1257,190 @@ public final class FarmController {
     }
 
     private boolean belongsTo(ItemStack stack, FarmData.ChestEntry chest) {
+        if (chest.auto) {
+            return true;
+        }
         String crop = productCache.get(stack.getItem());
         if (!chest.catchAll) {
             return crop != null && chest.crops.contains(crop);
         }
         // 기타 상자: 작물 상자가 따로 있는 수확물은 거기로 보낸다.
         return crop == null || data.chestsFor(crop).isEmpty();
+    }
+
+    // ---- 범위 안 상자 자동 정리 ----
+
+    /** 열어 보고 기억한 상자 내용과 빈칸 수. */
+    private record AutoChest(Set<Item> contents, int empty) {
+    }
+
+    private static final FarmData.ChestEntry AUTO_PROBE = autoEntry(BlockPos.ZERO);
+    private final Map<Long, AutoChest> autoMemory = new HashMap<>();
+    /** 이번 정리에서 처음 보는 아이템을 넣기로 한 상자 (같은 아이템은 한 상자에 모은다) */
+    private final Map<Item, BlockPos> newHomes = new HashMap<>();
+    private List<FarmData.ChestEntry> autoCache = List.of();
+    private long autoCacheAt;
+
+    private static FarmData.ChestEntry autoEntry(BlockPos pos) {
+        FarmData.ChestEntry e = new FarmData.ChestEntry();
+        e.x = pos.getX();
+        e.y = pos.getY();
+        e.z = pos.getZ();
+        e.auto = true;
+        return e;
+    }
+
+    public int autoChestCount() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (data == null) {
+            data = FarmData.current();
+        }
+        return player == null ? 0 : autoChests(player).size();
+    }
+
+    /**
+     * 농장 범위(+여유 칸) 안의 보관함. 상자·통·셜커 상자 등 (호퍼·발사기·화로 등은 제외).
+     * 직접 지정한 상자, 낚시 상자, 태클박스는 빼고, 큰 상자는 한쪽만 센다. 5초마다 다시 찾는다.
+     */
+    private List<FarmData.ChestEntry> autoChests(LocalPlayer player) {
+        if (!AfkConfig.FARM_AUTO_CHESTS.get() || !data.hasArea()) {
+            return List.of();
+        }
+        long now = System.currentTimeMillis();
+        if (now - autoCacheAt < 5000) {
+            return autoCache;
+        }
+        autoCacheAt = now;
+        Level level = player.level();
+        AABB box = data.areaBox().inflate(AfkConfig.FARM_AUTO_CHEST_MARGIN.get());
+        Set<Long> excluded = new HashSet<>();
+        for (FarmData.ChestEntry c : data.chests) {
+            excluded.add(c.pos().asLong());
+        }
+        if (data.fishChest != null) {
+            excluded.add(FarmData.pos(data.fishChest).asLong());
+        }
+        if (data.tackleBox != null) {
+            excluded.add(FarmData.pos(data.tackleBox).asLong());
+        }
+        List<FarmData.ChestEntry> found = new ArrayList<>();
+        int minCx = Mth.floor(box.minX) >> 4;
+        int maxCx = Mth.floor(box.maxX) >> 4;
+        int minCz = Mth.floor(box.minZ) >> 4;
+        int maxCz = Mth.floor(box.maxZ) >> 4;
+        for (int cx = minCx; cx <= maxCx; cx++) {
+            for (int cz = minCz; cz <= maxCz; cz++) {
+                if (!(level.getChunk(cx, cz, ChunkStatus.FULL, false) instanceof LevelChunk chunk)) {
+                    continue;
+                }
+                for (BlockEntity be : chunk.getBlockEntities().values()) {
+                    BlockPos pos = be.getBlockPos();
+                    if (!box.contains(Vec3.atCenterOf(pos)) || !isStorage(be) || excluded.contains(pos.asLong())) {
+                        continue;
+                    }
+                    BlockState state = be.getBlockState();
+                    if (state.getBlock() instanceof ChestBlock && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+                        BlockPos other = pos.relative(ChestBlock.getConnectedDirection(state));
+                        // 큰 상자: 다른 쪽이 직접 지정돼 있으면 빼고, 아니면 한쪽(왼쪽)만 센다
+                        if (excluded.contains(other.asLong()) || state.getValue(ChestBlock.TYPE) == ChestType.RIGHT) {
+                            continue;
+                        }
+                    }
+                    found.add(autoEntry(pos));
+                }
+            }
+        }
+        autoCache = found;
+        return found;
+    }
+
+    private static boolean isStorage(BlockEntity be) {
+        if (!(be instanceof RandomizableContainerBlockEntity)) {
+            return false;
+        }
+        String name = be.getClass().getSimpleName();
+        return !(be instanceof HopperBlockEntity) && !(be instanceof DispenserBlockEntity) && !name.contains("Crafter")
+                && !name.contains("TackleBox");
+    }
+
+    /** 이 자동 상자에 가 볼 만한지: 안 열어 봤거나, 같은 아이템이 들어 있거나, 갈 곳 없는 아이템을 받을 빈칸이 있음. */
+    private boolean worthVisiting(LocalPlayer player, FarmData.ChestEntry chest) {
+        AutoChest known = autoMemory.get(chest.pos().asLong());
+        if (known == null) {
+            return true;
+        }
+        for (int slot : slotsFor(player, AUTO_PROBE, -1)) {
+            Item item = player.getInventory().getItem(slot).getItem();
+            if (known.contents.contains(item)) {
+                return true;
+            }
+            if (known.empty > 0 && !hasHomeElsewhere(item, chest.pos())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 이 아이템을 받을 다른 상자가 있는지 (이미 그 아이템이 든 상자, 또는 이번에 정해 둔 상자). */
+    private boolean hasHomeElsewhere(Item item, BlockPos pos) {
+        BlockPos home = newHomes.get(item);
+        if (home != null && !home.equals(pos)) {
+            return true;
+        }
+        for (FarmData.ChestEntry c : autoCache) {
+            AutoChest known = autoMemory.get(c.pos().asLong());
+            if (!c.pos().equals(pos) && known != null && known.contents.contains(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** 열린 자동 상자에 옮길 메뉴 칸: 이미 든 아이템, 그리고 갈 곳 없는 새 아이템(빈칸만큼). */
+    private List<Integer> autoSlots(LocalPlayer player, AbstractContainerMenu menu, BlockPos pos) {
+        Inventory inv = player.getInventory();
+        Set<Item> contents = new HashSet<>();
+        int empty = 0;
+        for (Slot slot : menu.slots) {
+            if (slot.container == inv) {
+                continue;
+            }
+            if (slot.getItem().isEmpty()) {
+                empty++;
+            } else {
+                contents.add(slot.getItem().getItem());
+            }
+        }
+        List<Integer> chosen = new ArrayList<>();
+        int free = empty;
+        Set<Item> added = new HashSet<>();
+        for (int invSlot : slotsFor(player, AUTO_PROBE, -1)) {
+            Item item = inv.getItem(invSlot).getItem();
+            boolean take = contents.contains(item) || added.contains(item);
+            if (!take && free > 0 && !hasHomeElsewhere(item, pos)) {
+                take = true;
+                newHomes.put(item, pos);
+                added.add(item);
+            }
+            if (take) {
+                if (!contents.contains(item)) {
+                    free--;
+                }
+                chosen.add(invSlot);
+            }
+        }
+        contents.addAll(added);
+        autoMemory.put(pos.asLong(), new AutoChest(contents, Math.max(0, free)));
+        List<Integer> menuSlots = new ArrayList<>();
+        for (int invSlot : chosen) {
+            for (Slot slot : menu.slots) {
+                if (slot.container == inv && slot.getContainerSlot() == invSlot) {
+                    menuSlots.add(slot.index);
+                    break;
+                }
+            }
+        }
+        return menuSlots;
     }
 
     /** 절대 상자에 넣지 않는 것: 도구, 침낭, 낚싯바늘, 쓸 뼛가루. */

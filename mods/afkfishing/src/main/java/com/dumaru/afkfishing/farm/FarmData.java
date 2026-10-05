@@ -42,6 +42,8 @@ public final class FarmData {
         public Set<String> crops = new LinkedHashSet<>();
         /** 작물 상자에 해당하지 않는, 이번에 새로 얻은 아이템(물고기 등)을 넣는 상자 */
         public boolean catchAll;
+        /** 범위 안에서 자동으로 찾은 상자 (저장하지 않음) */
+        public transient boolean auto;
 
         public BlockPos pos() {
             return new BlockPos(x, y, z);
