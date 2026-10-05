@@ -13,7 +13,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.ItemStack;
 
 public class HudOverlay implements LayeredDraw.Layer {
@@ -93,7 +92,9 @@ public class HudOverlay implements LayeredDraw.Layer {
         add("AFK 낚시 · " + fc.state().label, 0x55FFFF);
         add("잡은 수 " + fc.catches() + " · 경과 " + formatDuration(fc.elapsedMillis() / 1000), 0xFFFFFF);
         Boolean openWater = fc.openWater();
-        if (openWater == null) {
+        if (fc.isStarcatcher()) {
+            add("스타캐쳐 낚싯대 · 미니게임 자동", 0xFFDD55);
+        } else if (openWater == null) {
             add("탁 트인 물: 확인 중", 0xAAAAAA);
         } else if (openWater) {
             add("탁 트인 물: O (보물 나옴)", 0x55FF55);
@@ -102,7 +103,7 @@ public class HudOverlay implements LayeredDraw.Layer {
             add("  " + fc.openWaterReason(), 0xFF5555);
         }
         ItemStack held = mc.player.getMainHandItem();
-        if (held.getItem() instanceof FishingRodItem && held.isDamageableItem()) {
+        if (FishingController.isRod(held) && held.isDamageableItem()) {
             add("내구도 " + (held.getMaxDamage() - held.getDamageValue()) + "/" + held.getMaxDamage(), 0xFFFFFF);
         }
         String lure = fc.lureStatus(mc.player);

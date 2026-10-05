@@ -34,6 +34,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.dumaru.afkfishing.common.AutoEater;
+import com.dumaru.afkfishing.compat.Starcatcher;
+import net.minecraft.world.entity.Entity;
 import com.dumaru.afkfishing.common.SleepModule;
 import com.dumaru.afkfishing.common.Util;
 
@@ -51,6 +53,7 @@ public final class FishingController {
         REELING("회수 중"),
         COOLDOWN("재투척 대기"),
         MOVING("AFK 방지 이동"),
+        MINIGAME("미니게임 중"),
         SLEEP("수면"),
         EAT("먹는 중");
 
@@ -81,6 +84,10 @@ public final class FishingController {
     private int delay;
     private int landFailures;
     private boolean hookLanded;
+    // Star Catcher 낚싯대로 낚는 중이면 true (찌가 바닐라 FishingHook이 아니고, 입질 후 미니게임이 열린다)
+    private boolean starcatcher;
+    private boolean minigameSeen;
+    private float minigameProgress;
     private String lastReelReason = "";
     // 탁 트인 물 판정. null = 아직 확인 전
     private Boolean openWater;
@@ -254,7 +261,7 @@ public final class FishingController {
         sleep.cancel();
         eater.cancel(Minecraft.getInstance());
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.player.fishing != null && mc.gameMode != null && mc.getConnection() != null
+        if (mc.player != null && canReelSafely(mc.player) && mc.gameMode != null && mc.getConnection() != null
                 && mc.player.isAlive()) {
             // 찌를 남겨 두면 접속 종료 등으로 찌가 사라질 때 낚싯바늘도 같이 사라지므로 먼저 회수한다.
             useRod(mc, mc.player, "정지 시 회수");
@@ -290,6 +297,7 @@ public final class FishingController {
             case CASTING -> tickCasting(mc, player);
             case WAITING -> tickWaiting(mc, player);
             case REELING -> tickReeling(mc, player);
+            case MINIGAME -> tickMinigame(mc, player);
             case COOLDOWN -> tickCooldown(mc, player);
             case SLEEP -> {
                 SleepModule.Result result = sleep.tick(mc, player);
@@ -341,7 +349,7 @@ public final class FishingController {
     }
 
     private void tickCasting(Minecraft mc, LocalPlayer player) {
-        if (player.fishing != null) {
+        if (hasHook(player)) {
             // 이전 찌가 아직 사라지지 않음. 너무 오래 남아 있으면 한 번 더 당겨서 회수.
             if (stateTicks > 40) {
                 useRod(mc, player, "남아 있던 찌 정리");
@@ -354,12 +362,20 @@ public final class FishingController {
         }
         player.setYRot(lockedYaw);
         player.setXRot(lockedPitch);
+        starcatcher = Starcatcher.isRod(player.getMainHandItem());
+        if (starcatcher) {
+            openWater = null; // Star Catcher는 바닐라 보물 조건과 상관없음
+        }
         useRod(mc, player, null);
         hookLanded = false;
         setState(State.WAITING, 0);
     }
 
     private void tickWaiting(Minecraft mc, LocalPlayer player) {
+        if (starcatcher) {
+            tickWaitingStarcatcher(mc, player);
+            return;
+        }
         FishingHook hook = player.fishing;
         if (hook == null) {
             // 서버가 찌를 제거함 (거리 초과, 아이템 변경 등). 다시 던진다.
@@ -419,6 +435,19 @@ public final class FishingController {
         if (--delay > 0) {
             return;
         }
+        if (starcatcher) {
+            Entity bob = Starcatcher.findBob(player);
+            if (bob != null && Starcatcher.bobState(bob) == Starcatcher.STATE_BITING) {
+                lootSnapshot = countInventory(player.getInventory());
+                useRod(mc, player, "입질");
+                minigameSeen = false;
+                minigameProgress = 0;
+                setState(State.MINIGAME, 0);
+                return;
+            }
+            setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
+            return;
+        }
         if (player.fishing != null) {
             lootSnapshot = countInventory(player.getInventory());
             lootCheckIn = LOOT_CHECK_DELAY;
@@ -448,6 +477,106 @@ public final class FishingController {
         setState(State.CASTING, 0);
     }
 
+    // ---- Star Catcher ----
+
+    private void tickWaitingStarcatcher(Minecraft mc, LocalPlayer player) {
+        Entity bob = Starcatcher.findBob(player);
+        if (bob == null) {
+            if (stateTicks > 20) {
+                setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
+            }
+            return;
+        }
+        int bobState = Starcatcher.bobState(bob);
+        if (bobState == Starcatcher.STATE_BITING) {
+            // Star Catcher는 입질 후 80틱 안에 당겨야 한다.
+            setState(State.REELING, randomBetween(AfkConfig.REEL_DELAY_MIN.get(), AfkConfig.REEL_DELAY_MAX.get()));
+            return;
+        }
+        if (!embedded && sleep.shouldSleep(player)) {
+            useRod(mc, player, "밤이 되어 잠자러 감");
+            beginSleep(player);
+            return;
+        }
+        if (!hookLanded && bobState >= Starcatcher.STATE_BOBBING) {
+            hookLanded = true;
+            landFailures = 0;
+        }
+        if (!hookLanded && stateTicks > HOOK_LAND_TIMEOUT) {
+            landFailures++;
+            if (landFailures >= MAX_LAND_FAILURES) {
+                useRod(mc, player, "찌 물 밖");
+                stop("찌가 물에 들어가지 않음");
+                return;
+            }
+            recast(mc, player, "찌 물 밖");
+            return;
+        }
+        if (stateTicks > AfkConfig.BITE_TIMEOUT_SECONDS.get() * 20) {
+            recast(mc, player, "입질 대기 시간 초과");
+        }
+    }
+
+    /** 입질 후 열린 Star Catcher 미니게임을 대신 둔다. 표적과 겹칠 때만 누르므로 헛치지 않는다. */
+    private void tickMinigame(Minecraft mc, LocalPlayer player) {
+        if (Starcatcher.isMinigame(mc.screen)) {
+            minigameSeen = true;
+            float p = Starcatcher.progress(mc.screen);
+            if (p >= 0) {
+                minigameProgress = p;
+            }
+            Starcatcher.playMinigameTick(mc.screen);
+            return;
+        }
+        if (minigameSeen) {
+            // 화면이 닫힘: 점수를 다 채웠으면 성공 (닫히기 직전 진행도로 판단)
+            if (minigameProgress >= 0.85f) {
+                catches++;
+                lootCheckIn = LOOT_CHECK_DELAY;
+            } else {
+                lastReelReason = "미니게임 실패";
+            }
+            setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
+            return;
+        }
+        if (stateTicks > 60) {
+            // 미니게임 없이 바로 잡히는 물고기이거나, 입질을 놓침
+            if (Starcatcher.findBob(player) == null) {
+                catches++;
+                lootCheckIn = LOOT_CHECK_DELAY;
+            } else {
+                lastReelReason = "미니게임이 열리지 않음";
+            }
+            setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
+        }
+    }
+
+    private boolean hasHook(LocalPlayer player) {
+        return player.fishing != null || (starcatcher && Starcatcher.findBob(player) != null);
+    }
+
+    /** 지금 낚싯대를 써서 찌를 거둬도 되는지 (Star Catcher 입질·미니게임 중에 쓰면 미니게임이 시작돼 버린다). */
+    private boolean canReelSafely(LocalPlayer player) {
+        if (player.fishing != null) {
+            return true;
+        }
+        if (!starcatcher) {
+            return false;
+        }
+        Entity bob = Starcatcher.findBob(player);
+        int s = Starcatcher.bobState(bob);
+        return bob != null && s != Starcatcher.STATE_BITING && s != Starcatcher.STATE_MINIGAME;
+    }
+
+    public boolean isStarcatcher() {
+        return isRunning() && starcatcher;
+    }
+
+    /** 입질을 당기는 중이거나 미니게임 중이면 끊지 않는 게 좋다 (농사가 일하러 갈 때 확인). */
+    public boolean isBusyCatching() {
+        return state == State.REELING || state == State.MINIGAME;
+    }
+
     private void recast(Minecraft mc, LocalPlayer player, String reason) {
         useRod(mc, player, reason);
         setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
@@ -473,7 +602,7 @@ public final class FishingController {
     /** 접속 종료 직전에 호출. 찌가 나가 있으면 회수 패킷을 보내 낚싯바늘을 돌려받는다. */
     public void reelInBeforeDisconnect() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.player.fishing != null && mc.gameMode != null && mc.player.isAlive()) {
+        if (mc.player != null && canReelSafely(mc.player) && mc.gameMode != null && mc.player.isAlive()) {
             useRod(mc, mc.player, "접속 종료 전 회수");
         }
         state = State.IDLE;
@@ -569,8 +698,9 @@ public final class FishingController {
         return -1;
     }
 
-    private static boolean isRod(ItemStack stack) {
-        return stack.getItem() instanceof FishingRodItem;
+    /** 바닐라 낚싯대 또는 Star Catcher 낚싯대. */
+    public static boolean isRod(ItemStack stack) {
+        return stack.getItem() instanceof FishingRodItem || Starcatcher.isRod(stack);
     }
 
     private static boolean isUsableRod(ItemStack stack) {

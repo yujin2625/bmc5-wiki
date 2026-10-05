@@ -36,7 +36,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -543,7 +542,7 @@ public final class FarmController {
             }
         }
         if (AfkConfig.FARM_WAIT_FISHING.get() && data.fishSpot != null && System.currentTimeMillis() >= fishRetryAt
-                && InvUtil.find(player, s -> s.getItem() instanceof FishingRodItem) >= 0) {
+                && InvUtil.find(player, FishingController::isRod) >= 0) {
             FarmData.FishSpot spot = data.fishSpot;
             Navigator.INSTANCE.start(Navigator.near(spot.pos(), 0.6), spot.pos(), 0.08, 1200);
             setState(State.FISH_MOVE);
@@ -996,7 +995,8 @@ public final class FarmController {
             setState(State.PLAN);
             return;
         }
-        if (stateTicks % 20 == 0 && hasWork(player)) {
+        // 입질을 당기는 중이거나 미니게임 중이면 끝날 때까지 기다린다.
+        if (stateTicks % 20 == 0 && !FishingController.INSTANCE.isBusyCatching() && hasWork(player)) {
             FishingController.INSTANCE.stopEmbedded();
             setState(State.PLAN);
         }
@@ -1213,7 +1213,7 @@ public final class FarmController {
     /** 절대 상자에 넣지 않는 것: 도구, 침낭, 낚싯바늘, 쓸 뼛가루. */
     private boolean isProtected(ItemStack stack) {
         return stack.isDamageableItem() || stack.is(SleepModule.SLEEPING_BAG_ITEMS) || stack.is(LURE_ITEMS)
-                || stack.getItem() instanceof FishingRodItem
+                || FishingController.isRod(stack)
                 || (stack.is(Items.BONE_MEAL) && AfkConfig.FARM_BONEMEAL.get());
     }
 
