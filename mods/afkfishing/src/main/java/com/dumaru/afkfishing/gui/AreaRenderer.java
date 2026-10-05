@@ -26,7 +26,8 @@ public final class AreaRenderer {
         if (mc.level == null || mc.player == null || !AfkConfig.FARM_SHOW_AREA.get()) {
             return;
         }
-        if (!(mc.screen instanceof AfkScreen) && !FarmController.INSTANCE.isRunning()) {
+        if (!(mc.screen instanceof AfkScreen) && !FarmController.INSTANCE.isRunning()
+                && !com.dumaru.afkfishing.FishingController.INSTANCE.isRunning()) {
             return;
         }
         FarmData data = FarmData.current();
@@ -47,6 +48,12 @@ public final class AreaRenderer {
         }
         for (FarmData.ChestEntry chest : data.chests) {
             box(pose, lines, new AABB(chest.pos()).inflate(0.02), 1f, 0.85f, 0.1f);
+        }
+        if (data.fishChest != null) {
+            box(pose, lines, new AABB(FarmData.pos(data.fishChest)).inflate(0.03), 0.2f, 0.9f, 0.9f);
+        }
+        if (data.tackleBox != null) {
+            box(pose, lines, new AABB(FarmData.pos(data.tackleBox)).inflate(0.03), 0.8f, 0.4f, 1f);
         }
         if (data.fishSpot != null) {
             Vec3 p = data.fishSpot.pos();

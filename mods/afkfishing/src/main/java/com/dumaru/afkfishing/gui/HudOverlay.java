@@ -89,7 +89,8 @@ public class HudOverlay implements LayeredDraw.Layer {
     }
 
     private void fishLines(Minecraft mc, FishingController fc) {
-        add("AFK 낚시 · " + fc.state().label, 0x55FFFF);
+        String label = fc.depositLabel().isEmpty() ? fc.state().label : fc.depositLabel();
+        add("AFK 낚시 · " + label, 0x55FFFF);
         add("잡은 수 " + fc.catches() + " · 경과 " + formatDuration(fc.elapsedMillis() / 1000), 0xFFFFFF);
         Boolean openWater = fc.openWater();
         if (fc.isStarcatcher()) {
@@ -116,6 +117,10 @@ public class HudOverlay implements LayeredDraw.Layer {
         String sleep = fc.sleepStatus(mc.player);
         if (sleep != null) {
             add("침낭 수면: " + sleep, 0xFFFFFF);
+        }
+        long untilDeposit = fc.secondsUntilDeposit(mc.player);
+        if (untilDeposit >= 0) {
+            add("다음 정리 " + formatDuration(untilDeposit) + " · 빈칸 " + InvUtil.freeSlots(mc.player), 0xFFFFFF);
         }
         if (AfkConfig.ANTI_AFK.get()) {
             add("다음 이동 " + formatDuration(fc.mover().secondsUntilMove()), 0xFFFFFF);

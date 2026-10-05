@@ -34,6 +34,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.dumaru.afkfishing.common.AutoEater;
+import com.dumaru.afkfishing.common.DepositModule;
+import com.dumaru.afkfishing.common.InvUtil;
+import com.dumaru.afkfishing.farm.FarmData;
+import java.util.ArrayList;
+import java.util.List;
+import net.minecraft.tags.ItemTags;
 import com.dumaru.afkfishing.common.Look;
 import com.dumaru.afkfishing.compat.Starcatcher;
 import net.minecraft.world.entity.Entity;
@@ -55,6 +61,7 @@ public final class FishingController {
         COOLDOWN("재투척 대기"),
         MOVING("AFK 방지 이동"),
         MINIGAME("미니게임 중"),
+        DEPOSIT("보관함에 정리 중"),
         SLEEP("수면"),
         EAT("먹는 중");
 
@@ -100,6 +107,12 @@ public final class FishingController {
     private float lockedPitch;
     private float lastHealth;
     private final SleepModule sleep = new SleepModule(PREFIX);
+    private final DepositModule deposit = new DepositModule(PREFIX);
+    // 정리: 시작할 때 갖고 있던 건 넣지 않는다. 다 넣으면 이 자리로 돌아온다.
+    private Map<Item, Integer> startCounts = new HashMap<>();
+    private long nextDepositAt;
+    private long lastDepositAttempt;
+    private Vec3 fishingSpot;
     private final AutoEater eater = new AutoEater();
     // 자동 농사가 기다리는 동안 시킨 낚시. 이때는 잠·먹기를 농사 쪽이 맡는다.
     private boolean embedded;
@@ -245,6 +258,10 @@ public final class FishingController {
         if (!embedded) {
             sleep.reset();
         }
+        startCounts = countInventory(player.getInventory());
+        nextDepositAt = System.currentTimeMillis() + AfkConfig.FISH_DEPOSIT_MINUTES.get() * 60_000L;
+        lastDepositAttempt = 0;
+        fishingSpot = player.position();
         lastMessage = "";
         setState(State.CASTING, 0);
         notify(player, embedded ? "기다리는 동안 낚시합니다." : "AFK 낚시 시작", ChatFormatting.GREEN);
@@ -261,6 +278,7 @@ public final class FishingController {
         }
         sleep.cancel();
         eater.cancel(Minecraft.getInstance());
+        deposit.cancel(Minecraft.getInstance());
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && canReelSafely(mc.player) && mc.gameMode != null && mc.getConnection() != null
                 && mc.player.isAlive()) {
@@ -302,6 +320,22 @@ public final class FishingController {
             case WAITING -> tickWaiting(mc, player);
             case REELING -> tickReeling(mc, player);
             case MINIGAME -> tickMinigame(mc, player);
+            case DEPOSIT -> {
+                DepositModule.Result result = deposit.tick(mc, player);
+                if (result == DepositModule.Result.FAILED) {
+                    stop("낚시 자리로 돌아오지 못함");
+                } else if (result == DepositModule.Result.DONE) {
+                    nextDepositAt = System.currentTimeMillis() + AfkConfig.FISH_DEPOSIT_MINUTES.get() * 60_000L;
+                    if (deposit.hadLeftovers()) {
+                        notify(player, "보관함이 가득 차서 일부를 넣지 못했습니다.", ChatFormatting.GOLD);
+                    }
+                    if (AfkConfig.STOP_WHEN_FULL.get() && player.getInventory().getFreeSlot() < 0) {
+                        stop("인벤토리 가득 참 (보관함도 가득 참)");
+                        return;
+                    }
+                    setState(State.CASTING, 0);
+                }
+            }
             case COOLDOWN -> tickCooldown(mc, player);
             case SLEEP -> {
                 SleepModule.Result result = sleep.tick(mc, player);
@@ -345,7 +379,9 @@ public final class FishingController {
             return false;
         }
         lastHealth = health;
-        if (AfkConfig.STOP_WHEN_FULL.get() && player.getInventory().getFreeSlot() < 0) {
+        if (AfkConfig.STOP_WHEN_FULL.get() && player.getInventory().getFreeSlot() < 0 && state != State.DEPOSIT
+                && (depositTargets(player).isEmpty() || System.currentTimeMillis() - lastDepositAttempt < 60_000L
+                        && lastDepositAttempt > 0 && state == State.COOLDOWN)) {
             stop("인벤토리 가득 참");
             return false;
         }
@@ -477,6 +513,12 @@ public final class FishingController {
             beginSleep(player);
             return;
         }
+        if (depositDue(player)) {
+            lastDepositAttempt = System.currentTimeMillis();
+            deposit.begin(depositTargets(player), fishingSpot);
+            setState(State.DEPOSIT, 0);
+            return;
+        }
         if (AfkConfig.ANTI_AFK.get() && mover.isDue() && mover.begin(player, lockedYaw)) {
             setState(State.MOVING, 0);
             return;
@@ -581,7 +623,92 @@ public final class FishingController {
 
     /** 입질을 당기는 중이거나 미니게임 중이면 끊지 않는 게 좋다 (농사가 일하러 갈 때 확인). */
     public boolean isBusyCatching() {
-        return state == State.REELING || state == State.MINIGAME;
+        return state == State.REELING || state == State.MINIGAME || state == State.DEPOSIT;
+    }
+
+    // ---- 낚은 것 정리 ----
+
+    private static final TagKey<Item> SC_FISHABLE =
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("starcatcher", "fishable"));
+    private static final List<TagKey<Item>> SC_GEAR = List.of(
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("starcatcher", "hooks")),
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("starcatcher", "bobbers")),
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("starcatcher", "baits")),
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("starcatcher", "hats")));
+
+    private static boolean isFish(ItemStack stack) {
+        return stack.is(ItemTags.FISHES) || stack.is(SC_FISHABLE);
+    }
+
+    /** 정리할 때 절대 옮기지 않는 것: 낚싯대, 바늘·찌·미끼·모자, 침낭. */
+    private static boolean isGear(ItemStack stack) {
+        if (isRod(stack) || stack.is(LURE_ITEMS) || stack.is(SleepModule.SLEEPING_BAG_ITEMS)) {
+            return true;
+        }
+        for (TagKey<Item> tag : SC_GEAR) {
+            if (stack.is(tag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 넣을 보관함 목록. Star Catcher 낚싯대면 물고기는 태클박스로, 바닐라 낚싯대면 낚시 상자로.
+     * 낚시 상자가 없으면 물고기는 태클박스로, 물고기가 아닌 전리품은 낚시 상자로.
+     */
+    private List<DepositModule.Target> depositTargets(LocalPlayer player) {
+        List<DepositModule.Target> targets = new ArrayList<>();
+        if (!AfkConfig.FISH_DEPOSIT.get()) {
+            return targets;
+        }
+        FarmData data = FarmData.current();
+        boolean toBox = data.tackleBox != null && Starcatcher.isAvailable() && (starcatcher || data.fishChest == null);
+        java.util.function.ToIntFunction<Item> keep = item -> startCounts.getOrDefault(item, 0);
+        if (toBox) {
+            targets.add(new DepositModule.Target(FarmData.pos(data.tackleBox), "태클박스",
+                    s -> isFish(s) && !isGear(s), keep));
+        }
+        if (data.fishChest != null) {
+            targets.add(new DepositModule.Target(FarmData.pos(data.fishChest), "낚시 상자",
+                    s -> !isGear(s) && !(toBox && isFish(s)), keep));
+        }
+        return targets;
+    }
+
+    private boolean depositDue(LocalPlayer player) {
+        List<DepositModule.Target> targets = depositTargets(player);
+        if (targets.isEmpty()) {
+            return false;
+        }
+        long now = System.currentTimeMillis();
+        boolean timeUp = now >= nextDepositAt;
+        boolean nearlyFull = InvUtil.freeSlots(player) <= AfkConfig.FISH_DEPOSIT_FREE_SLOTS.get()
+                && now - lastDepositAttempt > 60_000L;
+        if (!timeUp && !nearlyFull) {
+            return false;
+        }
+        for (DepositModule.Target t : targets) {
+            if (DepositModule.hasAnything(player, t)) {
+                return true;
+            }
+        }
+        if (timeUp) {
+            nextDepositAt = now + AfkConfig.FISH_DEPOSIT_MINUTES.get() * 60_000L; // 넣을 게 없으면 다음 주기로
+        }
+        return false;
+    }
+
+    /** HUD용: 정리 대상이 있으면 다음 정리까지 남은 초, 없으면 -1. */
+    public long secondsUntilDeposit(LocalPlayer player) {
+        if (depositTargets(player).isEmpty()) {
+            return -1;
+        }
+        return Math.max(0, (nextDepositAt - System.currentTimeMillis()) / 1000);
+    }
+
+    public String depositLabel() {
+        return deposit.isActive() ? deposit.label() : "";
     }
 
     private void recast(Minecraft mc, LocalPlayer player, String reason) {

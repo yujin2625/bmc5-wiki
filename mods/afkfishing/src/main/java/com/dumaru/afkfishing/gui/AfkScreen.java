@@ -130,6 +130,33 @@ public class AfkScreen extends Screen {
         y += ROW_H;
         addRenderableWidget(new IntSlider(left, y, AfkConfig.MINIGAME_MISS_PERCENT, 0, 20, 1,
                 v -> Component.literal("미니게임 실수 확률: " + v + "%")));
+        addRenderableWidget(toggle(right, y, "낚은 것 보관함에 정리", AfkConfig.FISH_DEPOSIT));
+        y += ROW_H;
+        addRenderableWidget(new IntSlider(left, y, AfkConfig.FISH_DEPOSIT_MINUTES, 1, 60, 1,
+                v -> Component.literal("정리 주기: " + v + "분")));
+        addRenderableWidget(new IntSlider(right, y, AfkConfig.FISH_DEPOSIT_FREE_SLOTS, 0, 20, 1,
+                v -> Component.literal("빈칸 " + v + "개 이하면 정리")));
+        y += ROW_H;
+        // 보관함 지정: 바라보는 블록으로. 이미 그 블록이면 해제.
+        FarmData data = FarmData.current();
+        Minecraft mc = Minecraft.getInstance();
+        boolean lookedIsContainer = looked != null && mc.level != null && mc.level.getBlockEntity(looked) != null;
+        boolean isChest = data.fishChest != null && looked != null && FarmData.pos(data.fishChest).equals(looked);
+        Button chest = addRenderableWidget(Button.builder(Component.literal(isChest ? "낚시 상자 해제" : "바라보는 상자 = 낚시 상자"), b -> {
+            data.fishChest = isChest ? null : FarmData.arr(looked);
+            data.save();
+            rebuildWidgets();
+        }).bounds(left, y, COL_W, BTN_H).build());
+        chest.active = lookedIsContainer || isChest;
+        boolean lookedIsBox = looked != null && mc.level != null
+                && net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(mc.level.getBlockState(looked).getBlock()).getPath().contains("tackle_box");
+        boolean isBox = data.tackleBox != null && looked != null && FarmData.pos(data.tackleBox).equals(looked);
+        Button box = addRenderableWidget(Button.builder(Component.literal(isBox ? "태클박스 해제" : "바라보는 태클박스 지정"), b -> {
+            data.tackleBox = isBox ? null : FarmData.arr(looked);
+            data.save();
+            rebuildWidgets();
+        }).bounds(right, y, COL_W, BTN_H).build());
+        box.active = lookedIsBox || isBox;
         return y + ROW_H;
     }
 
@@ -372,6 +399,11 @@ public class AfkScreen extends Screen {
 
     private void renderFishInfo(GuiGraphics g, int y) {
         FishingController fc = FishingController.INSTANCE;
+        FarmData data = FarmData.current();
+        g.drawCenteredString(font, "낚시 상자 " + (data.fishChest == null ? "없음" : FarmData.pos(data.fishChest).toShortString())
+                + " · 태클박스 " + (data.tackleBox == null ? "없음" : FarmData.pos(data.tackleBox).toShortString())
+                + "  (블록을 바라보고 J로 열어 지정)", width / 2, y, 0xAAAAAA);
+        y += 12;
         String summary = "잡은 수 " + fc.catches();
         if (!fc.isRunning() && !fc.lastMessage().isEmpty()) {
             summary += " · 마지막 정지 사유: " + fc.lastMessage();

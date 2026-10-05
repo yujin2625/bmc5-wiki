@@ -66,6 +66,10 @@ public final class FarmData {
     public List<ChestEntry> chests = new ArrayList<>();
     public Set<String> selectedCrops = new LinkedHashSet<>();
     public FishSpot fishSpot;
+    /** 낚시로 얻은 것을 넣을 상자 (바닐라 낚시, 물고기가 아닌 전리품) */
+    public int[] fishChest;
+    /** Star Catcher 물고기를 넣을 태클박스 */
+    public int[] tackleBox;
     /** 빈 농경지에 심을 기본 작물 (그 자리에 뭐가 있었는지 모를 때). null이면 심지 않음 */
     public String defaultPlant;
     /** 흙 위치("x,y,z") → 마지막으로 본 작물 id */

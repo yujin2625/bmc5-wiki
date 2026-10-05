@@ -66,6 +66,17 @@ public final class AfkConfig {
             .comment("한 방향으로 걷는 시간 (틱)")
             .defineInRange("moveTicks", 4, 2, 10);
 
+    // 낚은 것 보관함에 정리
+    public static final ModConfigSpec.BooleanValue FISH_DEPOSIT = BUILDER
+            .comment("낚은 것을 보관함에 넣음: Star Catcher 낚싯대면 물고기는 태클박스, 바닐라 낚싯대면 낚시 상자 (나머지 전리품은 낚시 상자)")
+            .define("fishDeposit", true);
+    public static final ModConfigSpec.IntValue FISH_DEPOSIT_MINUTES = BUILDER
+            .comment("이 시간(분)마다 정리")
+            .defineInRange("fishDepositMinutes", 15, 1, 120);
+    public static final ModConfigSpec.IntValue FISH_DEPOSIT_FREE_SLOTS = BUILDER
+            .comment("인벤토리 빈칸이 이 수 이하로 남으면 시간과 상관없이 바로 정리")
+            .defineInRange("fishDepositFreeSlots", 3, 0, 30);
+
     // 밤에 침낭으로 자기 (Comforts)
     public static final ModConfigSpec.BooleanValue SLEEP_AT_NIGHT = BUILDER
             .comment("밤이 되면 인벤토리의 침낭(Comforts)을 펼쳐서 자고, 일어나면 침낭을 회수한 뒤 제자리로 돌아와 낚시를 이어감")
