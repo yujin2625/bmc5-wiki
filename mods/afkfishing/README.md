@@ -35,3 +35,8 @@ NeoForm 재컴파일 단계는 JRE가 아니라 **JDK 21**이 필요합니다. �
 `JAVA_HOME`을 JDK 21로 지정하거나, 사용자 폴더의 `~/.gradle/gradle.properties`에 `org.gradle.java.home`을 넣으세요.
 
 결과물은 `build/libs/afkfishing-<버전>.jar`이고, 인스턴스의 `mods` 폴더에 넣으면 됩니다.
+
+`build-and-install.bat`을 실행하면 빌드부터 `mods` 폴더 복사까지 한 번에 합니다.
+- 기본으로 Gradle이 받아 둔 JDK 21(`%USERPROFILE%\.gradle\jdks\eclipse_adoptium-21-amd64-windows.2`)과 CurseForge의 BMC5 인스턴스 경로를 씁니다.
+- 경로가 다르면 `JAVA_HOME`, `BMC5_MODS_DIR` 환경 변수로 바꾸세요.
+- 게임이 켜져 있으면 jar가 잠겨서 복사가 실패하니, 게임을 끄고 실행하세요.
