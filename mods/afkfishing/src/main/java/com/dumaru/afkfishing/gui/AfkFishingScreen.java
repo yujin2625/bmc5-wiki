@@ -70,6 +70,7 @@ public class AfkFishingScreen extends Screen {
                 .create(right, y, COL_W, BTN_H, Component.literal("이동 패턴"), (b, v) -> AfkConfig.MOVE_PATTERN.set(v)));
         y += ROW_H;
         addRenderableWidget(toggle(left, y, "밤에 침낭으로 자기", AfkConfig.SLEEP_AT_NIGHT));
+        addRenderableWidget(toggle(right, y, "바늘 소진 시 정지", AfkConfig.STOP_WHEN_LURE_GONE));
         y += ROW_H + 4;
 
         addRenderableWidget(Button.builder(Component.literal("통계 초기화"), b -> FishingController.INSTANCE.resetStats())

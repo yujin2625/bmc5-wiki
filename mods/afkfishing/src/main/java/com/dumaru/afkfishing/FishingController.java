@@ -466,13 +466,17 @@ public final class FishingController {
         if (stateTicks < LURE_RETURN_TIMEOUT) {
             return false; // 서버에서 돌려주는 중일 수 있으니 잠시 대기
         }
-        if (!player.getOffhandItem().isEmpty()) {
-            stop("왼손에 다른 아이템이 있어 낚싯바늘을 끼울 수 없음");
-        } else {
-            // 낚싯바늘은 낚을 때마다 내구도가 1씩 닳는다 (자석 8, 가시/발광 16).
-            stop("낚싯바늘 소진 - 인벤토리에 예비 " + expectedLure.getDescription().getString() + " 없음");
+        // 낚싯바늘은 낚을 때마다 내구도가 1씩 닳는다 (자석 8, 가시/발광 16).
+        String reason = !player.getOffhandItem().isEmpty()
+                ? "왼손에 다른 아이템이 있어 낚싯바늘을 끼울 수 없음"
+                : "낚싯바늘 소진 - 인벤토리에 예비 " + expectedLure.getDescription().getString() + " 없음";
+        if (AfkConfig.STOP_WHEN_LURE_GONE.get()) {
+            stop(reason);
+            return false;
         }
-        return false;
+        notify(player, reason + ". 바늘 없이 계속 낚시합니다.", ChatFormatting.GOLD);
+        expectedLure = null;
+        return true;
     }
 
     // ---- 낚싯대 관리 ----

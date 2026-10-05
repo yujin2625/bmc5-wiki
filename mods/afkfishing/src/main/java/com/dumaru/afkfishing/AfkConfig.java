@@ -44,6 +44,9 @@ public final class AfkConfig {
     public static final ModConfigSpec.BooleanValue STOP_WHEN_FULL = BUILDER
             .comment("인벤토리에 빈 칸이 없으면 정지")
             .define("stopWhenInventoryFull", true);
+    public static final ModConfigSpec.BooleanValue STOP_WHEN_LURE_GONE = BUILDER
+            .comment("왼손 낚싯바늘(Hybrid Aquatic)이 다 닳고 예비도 없으면 정지. 끄면 바늘 없이 계속 낚시")
+            .define("stopWhenLureGone", true);
     public static final ModConfigSpec.BooleanValue STOP_ON_DAMAGE = BUILDER
             .comment("피해를 입으면 정지")
             .define("stopOnDamage", true);
