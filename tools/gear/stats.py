@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from gearvm import GearVM, Obj, Sym, sym_name, ITEM
 
-INST = r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5"
+INST = os.environ.get("MC_INSTANCE", r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5")
 INSTALL = os.environ.get("MC_INSTALL", r"C:\Users\Yujin Park\curseforge\minecraft\Install")
 SRG = os.path.join(INSTALL, r"libraries\net\minecraft\client\1.21.1-20240808.144430\client-1.21.1-20240808.144430-srg.jar")
 NEO = os.path.join(INSTALL, r"libraries\net\neoforged\neoforge\21.1.250\neoforge-21.1.250-universal.jar")

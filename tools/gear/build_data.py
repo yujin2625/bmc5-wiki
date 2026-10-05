@@ -12,7 +12,7 @@ What comes from where:
 import base64, collections, glob, json, os, re, struct, zipfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-INST = r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5"
+INST = os.environ.get("MC_INSTANCE", r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5")
 INSTALL = os.environ.get("MC_INSTALL", r"C:\Users\Yujin Park\curseforge\minecraft\Install")
 NEO = os.path.join(INSTALL, r"libraries\net\neoforged\neoforge\21.1.250\neoforge-21.1.250-universal.jar")
 

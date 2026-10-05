@@ -5,7 +5,7 @@ from jvm import VM, Obj, Sym, arg_types
 from natives import Natives, VAN, Part
 import raster
 
-INST = r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5"
+INST = os.environ.get("MC_INSTANCE", r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5")
 INSTALL = os.environ.get("MC_INSTALL", r"C:\Users\Yujin Park\curseforge\minecraft\Install")
 SRG = os.path.join(INSTALL, r"libraries\net\minecraft\client\1.21.1-20240808.144430\client-1.21.1-20240808.144430-srg.jar")
 VANILLA_ASSETS = os.path.join(INSTALL, r"versions\1.21.1\1.21.1.jar")

@@ -10,6 +10,7 @@ docs/                  배포되는 사이트 (빌드 결과물, 직접 고치�
   mobs/index.html      몹 사육 도감
   gear/index.html      장비·인챈트 도감
   storage/index.html   원격 창고 가이드 (Tom's Simple Storage)
+  dragons/index.html   드래곤 도감 (Dragon Mounts Remastered)
   assets/fonts/        마인크래프트 글리프로 만든 픽셀 폰트
 tools/
   build_site.py        페이지 조립 + 폰트 생성 → docs/
@@ -17,6 +18,7 @@ tools/
   render/              몹 렌더러: 모델 코드를 실행하는 작은 JVM 해석기(jvm.py) + 소프트웨어 래스터라이저
   home.html            첫 화면 원본
   storage.html         원격 창고 가이드 원본 (손으로 쓴 글, 데이터 추출 없음)
+  dragons.html         드래곤 도감 원본 (모드 데이터·바이트코드에서 확인한 값을 손으로 옮김, 그림은 docs/mobs/img/dmr-*.png 재사용)
   mobs/                몹 사육 도감 원본과 데이터 추출 스크립트
   gear/                장비·인챈트 도감 원본과 데이터 추출 스크립트
     stats.py           아이템 등록 코드를 실행해서 공격력·공격 속도·방어력·내구도를 읽음 (gearvm.py가 render/jvm.py를 확장)
@@ -32,7 +34,8 @@ keybinds/              BMC5 키바인딩 저장본과 다른 PC 적용 스크립
 ## 빌드
 
 Python 3만 있으면 됩니다(외부 패키지 없음). 마인크래프트 설치 폴더에서 폰트와 아이콘을 읽기 때문에
-CurseForge가 설치된 이 PC에서 실행해야 합니다. 경로가 다르면 `MC_INSTALL` 환경 변수로 지정하세요.
+CurseForge가 설치된 이 PC에서 실행해야 합니다. 경로가 다르면 `MC_INSTALL`(마인크래프트 Install 폴더)과
+`MC_INSTANCE`(BMC5 인스턴스 폴더) 환경 변수로 지정하세요.
 
 ```bash
 # 모드가 바뀌었을 때만: 모드 jar에서 번식/길들이기 데이터 다시 뽑기

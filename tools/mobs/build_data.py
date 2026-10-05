@@ -2,8 +2,8 @@
 import json, os, zipfile, glob, base64, struct
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-INST = r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5"
-INSTALL = r"C:\Users\Yujin Park\curseforge\minecraft\Install"
+INST = os.environ.get("MC_INSTANCE", r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5")
+INSTALL = os.environ.get("MC_INSTALL", r"C:\Users\Yujin Park\curseforge\minecraft\Install")
 raw = json.load(open(os.path.join(HERE, "data.json"), encoding="utf-8"))
 
 MODS = {
@@ -309,14 +309,14 @@ for g in [("minecraft:iron_golem", "철 골렘", "Iron Golem", "철 블록 4개�
 BREEDS = [
     ("fire", "불 드래곤", "사막 피라미드 상자 6.5%", "용암 속에 있으면서 오버월드일 것(둘 다 필요). 불·용암·마그마 블록·모닥불 근처"),
     ("forest", "숲 드래곤", "정글 사원 상자 20%", "정글이나 숲 바이옴. 나뭇잎·묘목·꽃·덩굴 근처"),
-    ("ice", "얼음 드래곤", "이글루 상자 15%", "추운 오버월드 바이옴. 얼음·눈 블록 근처"),
-    ("lush", "무성한 드래곤", "삼림 대저택 상자 20%, 정글 사원 상자 10%, 진달래 잎을 부술 때 0.01%", "무성한 동굴이나 정글 바이옴. 이끼·동굴 덩굴·발광 이끼 근처"),
-    ("end", "엔드 드래곤", "요새 복도 상자 10%. 엔더 드래곤 알도 부화시킬 수 있습니다(allow_egg_override)", "엔드 바이옴, 드래곤의 숨결. 엔드 돌·퍼퍼·엔드 막대기·후렴 식물 근처"),
-    ("sculk", "스컬크 드래곤", "고대 도시 상자 10%", "깊은 어둠 바이옴. 스컬크 블록 근처"),
+    ("ice", "얼음 드래곤", "이글루 상자 15%", "얼음·눈 블록 근처(추운 바이옴 조건은 이 팩에 태그가 없어 효과 없음)"),
+    ("lush", "무성한 드래곤", "삼림 대저택 상자 20%, 정글 사원 상자 10%, 진달래 잎을 부술 때 0.01%", "정글 바이옴. 이끼 블록·이끼 카펫·동굴 덩굴·발광 이끼 근처(무성한 동굴 조건은 이 팩에 태그가 없어 효과 없음)"),
+    ("end", "엔드 드래곤", "요새 복도 상자 10%. 엔더 드래곤 알도 부화시킬 수 있습니다(allow_egg_override)", "엔드 바이옴, 엔더 드래곤 브레스 구름. 엔드 돌·퍼퍼·엔드 막대기·후렴 식물 근처"),
+    ("sculk", "스컬크 드래곤", "고대 도시 상자 10%", "스컬크 블록 근처(깊은 어둠 바이옴 조건은 이 팩에 태그가 없어 효과 없음)"),
     ("nether", "네더 드래곤", "보루 잔해 보물 상자 35%, 네더 요새 상자 10%", "네더 바이옴. 네더랙·영혼 모래·발광석·네더 사마귀 블록 같은 네더 블록 근처"),
-    ("aether", "에테르 드래곤", "던전 상자 15%", "높이 200 이상, 산 바이옴이나 에테르. 하얀색 양털 근처"),
-    ("ghost", "유령 드래곤", "폐광 상자 15%", "Y 0 아래이면서 밝기 3 이하일 것(둘 다 필요). 흑요석·우는 흑요석"),
-    ("water", "물 드래곤", "묻힌 보물 상자 17.5%", "물속, 바다·강·해변 바이옴. 산호·해초·켈프·프리즈머린·바다 랜턴 근처"),
+    ("aether", "에테르 드래곤", "던전 상자 15%", "Y 200 초과, 산 바이옴이나 에테르. 흰색 양털 근처"),
+    ("ghost", "유령 드래곤", "폐광 상자 15%", "Y 0 아래에서 하늘이 안 보이고 블록 빛이 3 미만일 것(둘 다 필요). 주변 블록은 상관없음"),
+    ("water", "물 드래곤", "묻힌 보물 상자 17.5%", "물속이나 물가(물 1칸당 3점), 바다·강·해변 바이옴. 산호·해초·켈프·프리즈머린·바다 랜턴 근처"),
     ("amethyst", "자수정 드래곤", "요새 도서관 상자 10%", "자수정 블록·싹트는 자수정·자수정 송이 근처"),
 ]
 fish = with_icons(ex("minecraft:fishes"))
@@ -328,8 +328,8 @@ for key, nm, where, hab in BREEDS:
         {"k": KIND_TAME, "items": fish,
          "note": "물고기를 줄 때마다 1/5 확률로 길들여집니다. 이 서버는 야생 드래곤이 자연 생성되지 않으므로(enable_natural_dragon_spawns = false) 알에서 깨어난 새끼를 길들이면 됩니다. 길들인 뒤 안장을 얹어 타고, 갑옷과 상자를 달 수 있으며, 웅크리고 우클릭하면 인벤토리가 열립니다."},
         {"k": KIND_BREED, "items": fish, "req": "길들인 어른 드래곤 두 마리",
-         "note": "둘 다 물고기를 주면 번식하고, 그 자리에 이미 부화 중인 알이 생깁니다. 알의 종은 부모 종, 부모가 있는 곳 환경에 맞는 종, 이들을 섞은 하이브리드 중 무작위로 정해집니다(habitat_offspring, allow_hybridization 켜짐)."},
-        {"k": "서식지", "items": [], "note": f"번식할 때 부모 주변이 이 조건에 맞으면 이 종의 알이 나올 수 있습니다: {hab}."},
+         "note": "둘 다 물고기를 주면 번식하고, 그 자리에 이미 부화 중인 알이 생깁니다. 알의 종은 부모 종, 부모가 있는 곳 환경에 맞는 종, 이들을 섞은 하이브리드 중 무작위로 정해집니다(habitat_offspring, allow_hybridization 켜짐). 확률 계산과 서식지 점수, 안장·갑옷 얻는 곳은 드래곤 도감에 정리했습니다."},
+        {"k": "서식지", "items": [], "note": f"번식할 때 부모 주변(발 위치 기준 3×3×3)이 이 조건에 맞으면 이 종의 알이 나올 수 있습니다: {hab}. 점수 계산은 드래곤 도감을 보세요."},
         {"k": "회복", "items": meat, "note": "길들인 드래곤이 다쳤을 때 고기류를 주면 음식 포만도만큼 체력이 찹니다."}],
         [KIND_HATCH, KIND_TAME, KIND_BREED, KIND_EGG], "드래곤 알 dragon egg 안장 하이브리드")
 

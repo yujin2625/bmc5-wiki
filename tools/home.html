@@ -66,6 +66,11 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
       <b>원격 창고 가이드</b><span>Tom's Simple Storage로 상자를 하나로 묶고, 신호기와 고급 무선 터미널로 다른 차원에서도 꺼내 쓰는 방법</span>
       <span class="go">가이드 열기 ▶</span>
     </a>
+    <a class="page" href="dragons/">
+      <span class="ico"><canvas data-sprite="egg" width="8" height="8" aria-hidden="true"></canvas></span>
+      <b>드래곤 도감</b><span>Dragon Mounts 드래곤 11종의 알 얻는 곳, 부화·길들이기, 안장·갑옷 얻는 법, 번식 확률과 서식지 점수</span>
+      <span class="go">도감 열기 ▶</span>
+    </a>
   </nav>
   <footer>모드팩 버전: Better MC [NEOFORGE] BMC5 · Minecraft 1.21.1</footer>
 </main>
@@ -80,8 +85,9 @@ footer{color:var(--paper);text-shadow:2px 2px 0 var(--edge)}
   const SPR={heart:["........",".rr..rr.","rRrrrrrr","rRrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr..."],
     sword:["......gw",".....gwg","....gwg.","...gwg..","b.gwg...",".bwg....",".Bb.....","B.b....."],
     book:["........",".PPPPPP.",".PwwwwP.",".PpppPP.",".PwwwwP.",".PpppPP.",".PPPPPP.","........"],
-    chest:["........",".CCCCCC.",".cccccc.",".CCyyCC.",".ccyycc.",".cccccc.",".CCCCCC.","........"]};
-  const PAL={r:"#d8332a",R:"#ff8a7a",g:"#9aa3ad",w:"#f4efe0",b:"#7a5230",B:"#5a3a1e",p:"#b58cff",P:"#7b4fc2",C:"#7a4e2b",c:"#b07a3e",y:"#e9c46a"};
+    chest:["........",".CCCCCC.",".cccccc.",".CCyyCC.",".ccyycc.",".cccccc.",".CCCCCC.","........"],
+    egg:["...kk...","..kppk..",".kpwppk.",".kppppk.","kpwppppk","kppppPpk",".kpPPPk.","..kkkk.."]};
+  const PAL={r:"#d8332a",R:"#ff8a7a",g:"#9aa3ad",w:"#f4efe0",b:"#7a5230",B:"#5a3a1e",p:"#b58cff",P:"#7b4fc2",C:"#7a4e2b",c:"#b07a3e",y:"#e9c46a",k:"#1d1024"};
   document.querySelectorAll("canvas[data-sprite]").forEach(cv=>{const g=cv.getContext("2d");
     SPR[cv.dataset.sprite].forEach((row,y)=>[...row].forEach((ch,i)=>{if(PAL[ch]){g.fillStyle=PAL[ch];g.fillRect(i,y,1,1);}}));});
 })();

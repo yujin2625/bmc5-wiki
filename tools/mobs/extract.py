@@ -1,8 +1,8 @@
 import json, zipfile, glob, os, re, sys
 from collections import defaultdict
 
-INST = r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5"
-INSTALL = r"C:\Users\Yujin Park\curseforge\minecraft\Install"
+INST = os.environ.get("MC_INSTANCE", r"C:\Users\Yujin Park\curseforge\minecraft\Instances\Better MC [NEOFORGE] BMC5")
+INSTALL = os.environ.get("MC_INSTALL", r"C:\Users\Yujin Park\curseforge\minecraft\Install")
 OUT = os.path.join(os.path.dirname(__file__), "data.json")
 
 jars = sorted(glob.glob(os.path.join(glob.escape(INST), "mods", "*.jar")))

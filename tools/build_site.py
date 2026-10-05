@@ -28,6 +28,7 @@ PAGES = [
     (data_page("mobs/template.html", "mobs/wiki.json"), "mobs/index.html"),
     (data_page("gear/template.html", "gear/wiki.json"), "gear/index.html"),
     (load("storage.html"), "storage/index.html"),
+    (load("dragons.html"), "dragons/index.html"),
 ]
 
 # characters that can appear on screen
