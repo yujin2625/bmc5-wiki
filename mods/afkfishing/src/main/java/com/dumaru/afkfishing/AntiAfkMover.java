@@ -37,7 +37,7 @@ public final class AntiAfkMover {
     private float outLeft;
     private String failReason = "";
 
-    AntiAfkMover(Random random) {
+    public AntiAfkMover(Random random) {
         this.random = random;
     }
 

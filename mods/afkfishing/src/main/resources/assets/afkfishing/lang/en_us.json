@@ -1,5 +1,6 @@
 {
-  "key.categories.afkfishing": "AFK Fishing",
-  "key.afkfishing.open_gui": "Open AFK Fishing GUI",
-  "key.afkfishing.toggle": "Start/Stop AFK Fishing"
+  "key.categories.afkfishing": "AFK Automation",
+  "key.afkfishing.open_gui": "Open AFK Automation GUI",
+  "key.afkfishing.toggle": "Start/Stop AFK Fishing",
+  "key.afkfishing.farm_toggle": "Start/Stop Auto Farming"
 }

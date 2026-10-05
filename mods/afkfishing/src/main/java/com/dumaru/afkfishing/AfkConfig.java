@@ -1,5 +1,6 @@
 package com.dumaru.afkfishing;
 
+import com.dumaru.afkfishing.common.AutoEater;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class AfkConfig {
@@ -76,6 +77,70 @@ public final class AfkConfig {
     public static final ModConfigSpec.BooleanValue SHOW_HUD = BUILDER
             .comment("화면에 상태 HUD 표시")
             .define("showHud", true);
+
+    // 자동으로 먹기 (공통)
+    public static final ModConfigSpec.EnumValue<AutoEater.FoodMode> FOOD_MODE = BUILDER
+            .comment("배고프면 자동으로 먹기. NON_CROP = 농사로 거둔 작물은 먹지 않음")
+            .defineEnum("foodMode", AutoEater.FoodMode.NON_CROP);
+    public static final ModConfigSpec.IntValue EAT_BELOW = BUILDER
+            .comment("배고픔 수치가 이 값 이하이면 먹음 (최대 20)")
+            .defineInRange("eatBelow", 14, 1, 19);
+    public static final ModConfigSpec.IntValue FOOD_KEEP = BUILDER
+            .comment("상자에 정리할 때 인벤토리에 남겨 둘 먹을 음식 수")
+            .defineInRange("foodKeep", 16, 0, 64);
+
+    // 자동 농사
+    public static final ModConfigSpec.IntValue FARM_MIN_RIPE = BUILDER
+            .comment("다 자란 작물이 이 개수 이상 모이면 수확하러 감")
+            .defineInRange("farmMinRipe", 8, 1, 256);
+    public static final ModConfigSpec.IntValue FARM_MIN_RIPE_PERCENT = BUILDER
+            .comment("또는 선택한 작물 중 이 비율(%) 이상이 다 자라면 수확하러 감. 0이면 사용 안 함")
+            .defineInRange("farmMinRipePercent", 50, 0, 100);
+    public static final ModConfigSpec.IntValue FARM_MAX_WAIT_MINUTES = BUILDER
+            .comment("다 자란 작물이 하나라도 이 시간(분) 넘게 기다리면 개수와 상관없이 수확하러 감")
+            .defineInRange("farmMaxWaitMinutes", 10, 1, 120);
+    public static final ModConfigSpec.BooleanValue FARM_USE_HOE = BUILDER
+            .comment("괭이를 들고 수확 (Right Click Harvest가 괭이 등급에 따라 주변도 같이 수확)")
+            .define("farmUseHoe", true);
+    public static final ModConfigSpec.BooleanValue FARM_REPLANT = BUILDER
+            .comment("비어 있는 농경지에 그 자리에 있던 작물(또는 기본 작물)의 씨앗을 다시 심음")
+            .define("farmReplant", true);
+    public static final ModConfigSpec.IntValue FARM_KEEP_SEEDS = BUILDER
+            .comment("상자에 정리할 때 다시 심을 씨앗을 작물마다 이만큼 남겨 둠")
+            .defineInRange("farmKeepSeeds", 16, 0, 256);
+    public static final ModConfigSpec.BooleanValue FARM_BONEMEAL = BUILDER
+            .comment("수확할 게 없을 때 덜 자란 작물에 뼛가루 사용")
+            .define("farmBonemeal", false);
+    public static final ModConfigSpec.IntValue FARM_BONEMEAL_KEEP = BUILDER
+            .comment("뼛가루를 이만큼은 쓰지 않고 남겨 둠")
+            .defineInRange("farmBonemealKeep", 0, 0, 256);
+    public static final ModConfigSpec.BooleanValue FARM_COLLECT_ITEMS = BUILDER
+            .comment("농장 안에 떨어진 아이템을 주우러 감")
+            .define("farmCollectItems", true);
+    public static final ModConfigSpec.IntValue FARM_DEPOSIT_MINUTES = BUILDER
+            .comment("이 시간(분)마다 인벤토리의 수확물을 지정한 상자에 정리")
+            .defineInRange("farmDepositMinutes", 10, 1, 120);
+    public static final ModConfigSpec.IntValue FARM_DEPOSIT_FREE_SLOTS = BUILDER
+            .comment("인벤토리 빈칸이 이 수 이하로 남으면 시간과 상관없이 바로 정리")
+            .defineInRange("farmDepositFreeSlots", 3, 0, 30);
+    public static final ModConfigSpec.BooleanValue FARM_DEPOSIT_BEFORE_SLEEP = BUILDER
+            .comment("자러 가기 전에 상자에 정리")
+            .define("farmDepositBeforeSleep", true);
+    public static final ModConfigSpec.BooleanValue FARM_STOP_WHEN_CHESTS_FULL = BUILDER
+            .comment("넣을 상자가 모두 가득 차면 정지. 끄면 알림만 하고 계속")
+            .define("farmStopWhenChestsFull", false);
+    public static final ModConfigSpec.BooleanValue FARM_WAIT_FISHING = BUILDER
+            .comment("수확할 게 없을 때 지정한 낚시 자리에서 낚시하며 기다림")
+            .define("farmWaitFishing", true);
+    public static final ModConfigSpec.IntValue FARM_TOOL_MIN_DURABILITY = BUILDER
+            .comment("괭이·도끼 등 도구의 남은 내구도가 이 값 이하이면 쓰지 않음")
+            .defineInRange("farmToolMinDurability", 10, 0, 256);
+    public static final ModConfigSpec.BooleanValue FARM_AVOID_FARMLAND = BUILDER
+            .comment("이동할 때 되도록 농경지를 밟지 않고 길로 다님")
+            .define("farmAvoidFarmland", true);
+    public static final ModConfigSpec.BooleanValue FARM_SHOW_AREA = BUILDER
+            .comment("농장 범위·상자·낚시 자리를 화면에 테두리로 표시 (설정 화면이 열려 있거나 농사 중일 때)")
+            .define("farmShowArea", true);
 
     public static final ModConfigSpec SPEC = BUILDER.build();
 

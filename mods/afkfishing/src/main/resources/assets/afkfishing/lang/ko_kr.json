@@ -1,5 +1,6 @@
 {
-  "key.categories.afkfishing": "AFK 낚시",
-  "key.afkfishing.open_gui": "AFK 낚시 설정 열기",
-  "key.afkfishing.toggle": "AFK 낚시 시작/정지"
+  "key.categories.afkfishing": "AFK 자동화",
+  "key.afkfishing.open_gui": "AFK 자동화 설정 열기",
+  "key.afkfishing.toggle": "AFK 낚시 시작/정지",
+  "key.afkfishing.farm_toggle": "자동 농사 시작/정지"
 }

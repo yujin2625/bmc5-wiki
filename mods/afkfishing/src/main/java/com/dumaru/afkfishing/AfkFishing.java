@@ -1,6 +1,9 @@
 package com.dumaru.afkfishing;
 
-import com.dumaru.afkfishing.gui.AfkFishingScreen;
+import com.dumaru.afkfishing.common.Navigator;
+import com.dumaru.afkfishing.farm.FarmController;
+import com.dumaru.afkfishing.gui.AfkScreen;
+import com.dumaru.afkfishing.gui.AreaRenderer;
 import com.dumaru.afkfishing.gui.HudOverlay;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -16,6 +19,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
@@ -29,35 +33,52 @@ public class AfkFishing {
             "key.afkfishing.open_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, "key.categories.afkfishing");
     public static final KeyMapping KEY_TOGGLE = new KeyMapping(
             "key.afkfishing.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, "key.categories.afkfishing");
+    public static final KeyMapping KEY_FARM_TOGGLE = new KeyMapping(
+            "key.afkfishing.farm_toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F9, "key.categories.afkfishing");
 
     public AfkFishing(IEventBus modBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.CLIENT, AfkConfig.SPEC);
-        container.registerExtensionPoint(IConfigScreenFactory.class, (c, parent) -> new AfkFishingScreen(parent));
+        container.registerExtensionPoint(IConfigScreenFactory.class, (c, parent) -> new AfkScreen(parent));
 
         modBus.addListener(RegisterKeyMappingsEvent.class, e -> {
             e.register(KEY_OPEN_GUI);
             e.register(KEY_TOGGLE);
+            e.register(KEY_FARM_TOGGLE);
         });
         modBus.addListener(RegisterGuiLayersEvent.class, e ->
                 e.registerAboveAll(ResourceLocation.fromNamespaceAndPath(MODID, "hud"), new HudOverlay()));
 
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, e -> onClientTick());
-        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class,
-                e -> FishingController.INSTANCE.mover().applyInput(e.getInput()));
-        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class,
-                e -> FishingController.INSTANCE.stop("서버 접속 종료"));
+        NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, e -> {
+            // 길찾기 이동이 우선. 아니면 AFK 방지 이동 (낚시·농사 각자 것).
+            if (Navigator.INSTANCE.isActive()) {
+                Navigator.INSTANCE.applyInput(e.getInput(), Minecraft.getInstance().player);
+            } else {
+                FishingController.INSTANCE.mover().applyInput(e.getInput());
+                FarmController.INSTANCE.mover().applyInput(e.getInput());
+            }
+        });
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
+            FishingController.INSTANCE.stop("서버 접속 종료");
+            FarmController.INSTANCE.onDisconnect();
+        });
+        NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, AreaRenderer::render);
     }
 
     private static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
         while (KEY_OPEN_GUI.consumeClick()) {
             if (mc.screen == null) {
-                mc.setScreen(new AfkFishingScreen(null));
+                mc.setScreen(new AfkScreen(null));
             }
         }
         while (KEY_TOGGLE.consumeClick()) {
             FishingController.INSTANCE.toggle();
         }
+        while (KEY_FARM_TOGGLE.consumeClick()) {
+            FarmController.INSTANCE.toggle();
+        }
+        FarmController.INSTANCE.tick(mc);
         FishingController.INSTANCE.tick(mc);
     }
 }
