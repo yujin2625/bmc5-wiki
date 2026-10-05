@@ -8,19 +8,30 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.FishingRodItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * 낚시 상태 머신. 매 클라이언트 틱마다 호출되며 마우스 입력 대신 gameMode.useItem()을 직접 호출하므로
@@ -35,7 +46,11 @@ public final class FishingController {
         WAITING("입질 대기"),
         REELING("회수 중"),
         COOLDOWN("재투척 대기"),
-        MOVING("AFK 방지 이동");
+        MOVING("AFK 방지 이동"),
+        SLEEP_PREP("침낭 펼치는 중"),
+        SLEEPING("수면 중"),
+        BAG_PICKUP("침낭 회수 중"),
+        RETURNING("제자리로 복귀 중");
 
         public final String label;
 
@@ -53,6 +68,21 @@ public final class FishingController {
     // Hybrid Aquatic 낚싯바늘. 던질 때 왼손에서 찌로 옮겨지고 회수하면 돌아온다.
     private static final TagKey<Item> LURE_ITEMS =
             TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("hybrid_aquatic", "lure_items"));
+
+    // Comforts 침낭. 서버 설정 autoUse가 켜져 있으면 땅에 쓰면 바로 펼치고 눕는다.
+    private static final TagKey<Item> SLEEPING_BAG_ITEMS =
+            TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("comforts", "sleeping_bags"));
+    private static final TagKey<Block> SLEEPING_BAG_BLOCKS =
+            TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("comforts", "sleeping_bags"));
+    // 바닐라 침대를 쓸 수 있는 밤 시간대 (맑은 날 기준)
+    private static final long NIGHT_START = 12542;
+    private static final long NIGHT_END = 23460;
+    private static final int SLEEP_START_TIMEOUT = 60; // 침낭을 펼친 뒤 눕기를 기다리는 시간 (틱)
+    private static final int SLEEP_RETRY_TICKS = 60 * 20; // 잠들지 못했을 때 다시 시도하기까지 (틱)
+    private static final int BAG_PICKUP_TIMEOUT = 100;
+    private static final int RETURN_TIMEOUT = 300;
+    private static final int CHASE_ITEM_TICKS = 120; // 떨어진 침낭 아이템을 쫓아가는 최대 시간 (틱)
+    private static final double RETURN_ARRIVE_DIST = 0.08;
 
     private final Random random = new Random();
     private final AntiAfkMover mover = new AntiAfkMover(random);
@@ -72,6 +102,12 @@ public final class FishingController {
     private float lockedYaw;
     private float lockedPitch;
     private float lastHealth;
+    // 침낭 수면
+    private int sleepRetryIn;
+    private boolean bagPlaced;
+    private BlockPos bagFoot;
+    private BlockPos bagHead;
+    private Vec3 fishingSpot;
 
     // 통계
     private long startedAtMillis;
@@ -183,6 +219,7 @@ public final class FishingController {
         expectedLure = offhand.is(LURE_ITEMS) ? offhand.getItem() : null;
         startedAtMillis = System.currentTimeMillis();
         mover.reset();
+        sleepRetryIn = 0;
         lastMessage = "";
         setState(State.CASTING, 0);
         notify(player, "AFK 낚시 시작", ChatFormatting.GREEN);
@@ -229,7 +266,11 @@ public final class FishingController {
             case CASTING -> tickCasting(mc, player);
             case WAITING -> tickWaiting(mc, player);
             case REELING -> tickReeling(mc, player);
-            case COOLDOWN -> tickCooldown(player);
+            case COOLDOWN -> tickCooldown(mc, player);
+            case SLEEP_PREP -> tickSleepPrep(mc, player);
+            case SLEEPING -> tickSleeping(player);
+            case BAG_PICKUP -> tickBagPickup(mc, player);
+            case RETURNING -> tickReturning(player);
             case MOVING -> {
                 AntiAfkMover.Result result = mover.tick(player);
                 if (result == AntiAfkMover.Result.DONE) {
@@ -243,6 +284,9 @@ public final class FishingController {
         }
         if (state != State.MOVING && state != State.IDLE) {
             mover.countdown();
+        }
+        if (sleepRetryIn > 0) {
+            sleepRetryIn--;
         }
     }
 
@@ -291,6 +335,11 @@ public final class FishingController {
             if (stateTicks > 20) {
                 setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
             }
+            return;
+        }
+        if (shouldSleep(mc, player)) {
+            useRod(mc, player, "밤이 되어 잠자러 감");
+            beginSleep();
             return;
         }
         if (hook.biting) {
@@ -348,8 +397,12 @@ public final class FishingController {
         setState(State.COOLDOWN, randomBetween(AfkConfig.RECAST_DELAY_MIN.get(), AfkConfig.RECAST_DELAY_MAX.get()));
     }
 
-    private void tickCooldown(LocalPlayer player) {
+    private void tickCooldown(Minecraft mc, LocalPlayer player) {
         if (--delay > 0) {
+            return;
+        }
+        if (shouldSleep(mc, player)) {
+            beginSleep();
             return;
         }
         if (AfkConfig.ANTI_AFK.get() && mover.isDue() && mover.begin(player, lockedYaw)) {
@@ -472,6 +525,274 @@ public final class FishingController {
             return true;
         }
         return stack.getMaxDamage() - stack.getDamageValue() > AfkConfig.MIN_DURABILITY.get();
+    }
+
+    // ---- 밤에 침낭으로 자기 ----
+
+    /** HUD 표시용: 침낭 수면 상태. 옵션이 꺼져 있으면 null. */
+    public String sleepStatus(LocalPlayer player) {
+        if (!AfkConfig.SLEEP_AT_NIGHT.get()) {
+            return null;
+        }
+        if (state == State.SLEEP_PREP || state == State.SLEEPING || state == State.BAG_PICKUP || state == State.RETURNING) {
+            return state.label;
+        }
+        if (findSleepingBag(player) < 0) {
+            return "인벤토리에 침낭 없음";
+        }
+        if (!player.level().dimensionType().bedWorks()) {
+            return "이 차원에서는 잘 수 없음";
+        }
+        if (sleepRetryIn > 0) {
+            return "재시도 " + sleepRetryIn / 20 + "초 후";
+        }
+        return isNight(player.level()) ? "밤 - 곧 잠" : "밤이 되면 잠";
+    }
+
+    private boolean shouldSleep(Minecraft mc, LocalPlayer player) {
+        return AfkConfig.SLEEP_AT_NIGHT.get()
+                && sleepRetryIn <= 0
+                && mc.level.dimensionType().bedWorks() // 네더/엔드에서는 침대가 폭발한다
+                && isNight(mc.level)
+                && player.onGround()
+                && !player.isInWater()
+                && findSleepingBag(player) >= 0;
+    }
+
+    private static boolean isNight(Level level) {
+        long time = level.getDayTime() % 24000L;
+        return time >= NIGHT_START && time < NIGHT_END;
+    }
+
+    private void beginSleep() {
+        bagPlaced = false;
+        bagFoot = null;
+        bagHead = null;
+        setState(State.SLEEP_PREP, 0);
+    }
+
+    private void tickSleepPrep(Minecraft mc, LocalPlayer player) {
+        if (bagPlaced) {
+            if (player.isSleeping()) {
+                notify(player, "밤이 되어 침낭에서 잡니다.", ChatFormatting.GRAY);
+                setState(State.SLEEPING, 0);
+            } else if (stateTicks > SLEEP_START_TIMEOUT) {
+                sleepRetryIn = SLEEP_RETRY_TICKS;
+                if (findPlacedBag(player.level()) != null) {
+                    // 침낭은 펼쳐졌는데 눕지 못했으면 회수하고 낚시로 돌아간다.
+                    notify(player, "잠들지 못했습니다. 침낭을 회수하고 1분 뒤 다시 시도합니다.", ChatFormatting.GOLD);
+                    setState(State.BAG_PICKUP, 0);
+                } else {
+                    failSleep(player, "잠들지 못함 (몬스터가 가까이 있거나 잘 수 없는 시간)");
+                }
+            }
+            return;
+        }
+        if (player.fishing != null) {
+            if (stateTicks % 20 == 1) {
+                useRod(mc, player, "잠자기 전 회수");
+            }
+            return;
+        }
+        if (!ensureSleepingBagInHand(mc, player)) {
+            return;
+        }
+        Direction dir = findBagPlacement(player);
+        if (dir == null) {
+            failSleep(player, "주변에 침낭을 펼칠 평평한 빈자리가 없음");
+            return;
+        }
+        BlockPos feet = player.blockPosition();
+        bagFoot = feet.relative(dir);
+        bagHead = bagFoot.relative(dir);
+        fishingSpot = player.position();
+
+        // 침낭(침대)은 서버가 알고 있는 플레이어 방향으로 머리 쪽이 펼쳐진다.
+        // UseItemOn 패킷에는 방향이 없으므로 회전 패킷을 먼저 보낸다.
+        BlockPos ground = bagFoot.below();
+        Vec3 hit = new Vec3(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
+        lookAt(player, hit);
+        player.setYRot(dir.toYRot());
+        mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(player.getYRot(), player.getXRot(), player.onGround()));
+        InteractionResult result = mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
+                new BlockHitResult(hit, Direction.UP, ground, false));
+        if (result.shouldSwing()) {
+            player.swing(InteractionHand.MAIN_HAND);
+        }
+        bagPlaced = true;
+        stateTicks = 0;
+    }
+
+    private void failSleep(LocalPlayer player, String reason) {
+        sleepRetryIn = SLEEP_RETRY_TICKS;
+        notify(player, reason + " - 1분 뒤 다시 시도합니다.", ChatFormatting.GOLD);
+        setState(State.CASTING, 0);
+    }
+
+    private void tickSleeping(LocalPlayer player) {
+        if (player.isSleeping()) {
+            return;
+        }
+        // 일어났다. 바닐라는 침대 옆 빈칸에 세우므로 침낭을 걷고 제자리로 돌아가야 한다.
+        sleepRetryIn = SLEEP_RETRY_TICKS;
+        notify(player, "기상. 침낭을 회수하고 낚시를 이어갑니다.", ChatFormatting.GRAY);
+        setState(State.BAG_PICKUP, 0);
+    }
+
+    private void tickBagPickup(Minecraft mc, LocalPlayer player) {
+        BlockPos target = findPlacedBag(player.level());
+        if (target == null) {
+            if (stateTicks > 5) {
+                setState(State.RETURNING, 0);
+            }
+            return;
+        }
+        if (stateTicks > BAG_PICKUP_TIMEOUT) {
+            mc.gameMode.stopDestroyBlock();
+            stop("침낭을 회수하지 못함 (" + target.toShortString() + ")");
+            return;
+        }
+        // 침낭은 강도 0.1이라 맨손으로도 몇 틱이면 부서진다. 아이템은 머리 쪽에서 떨어진다.
+        lookAt(player, Vec3.atBottomCenterOf(target).add(0, 0.1, 0));
+        mc.gameMode.continueDestroyBlock(target, Direction.UP);
+        player.swing(InteractionHand.MAIN_HAND);
+    }
+
+    private void tickReturning(LocalPlayer player) {
+        if (player.isInWater() || player.isInLava()) {
+            mover.cancel();
+            stop("복귀 중 물/용암에 빠짐");
+            return;
+        }
+        player.setSprinting(false);
+        // 떨어진 침낭 아이템을 먼저 주우러 가고, 주웠으면 원래 낚시 자리로 간다.
+        ItemEntity dropped = stateTicks < CHASE_ITEM_TICKS ? findDroppedBag(player) : null;
+        Vec3 target = dropped != null ? dropped.position() : fishingSpot;
+        double dx = target.x - player.getX();
+        double dz = target.z - player.getZ();
+        double dist = Math.sqrt(dx * dx + dz * dz);
+        if (dropped == null && dist < RETURN_ARRIVE_DIST) {
+            mover.cancel();
+            setState(State.CASTING, 0);
+            return;
+        }
+        if (stateTicks > RETURN_TIMEOUT) {
+            mover.cancel();
+            if (dropped == null && dist < 0.4) {
+                setState(State.CASTING, 0);
+            } else {
+                stop("낚시 자리로 돌아오지 못함");
+            }
+            return;
+        }
+        mover.walkTo(target);
+    }
+
+    /** 침낭이 있는 슬롯. 선택된 칸 → 핫바 → 메인 인벤토리 순으로 찾고, 없으면 -1. */
+    private static int findSleepingBag(LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        if (inv.getSelected().is(SLEEPING_BAG_ITEMS)) {
+            return inv.selected;
+        }
+        for (int i = 0; i < 36; i++) {
+            if (inv.getItem(i).is(SLEEPING_BAG_ITEMS)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean ensureSleepingBagInHand(Minecraft mc, LocalPlayer player) {
+        Inventory inv = player.getInventory();
+        if (inv.getSelected().is(SLEEPING_BAG_ITEMS)) {
+            return true;
+        }
+        int slot = findSleepingBag(player);
+        if (slot < 0) {
+            failSleep(player, "인벤토리에 침낭 없음");
+            return false;
+        }
+        if (Inventory.isHotbarSlot(slot)) {
+            inv.selected = slot;
+            return true;
+        }
+        if (player.containerMenu == player.inventoryMenu) {
+            mc.gameMode.handleInventoryMouseClick(player.inventoryMenu.containerId, slot, inv.selected, ClickType.SWAP, player);
+        } else if (stateTicks > 100) {
+            failSleep(player, "다른 창이 열려 있어 침낭을 꺼내지 못함");
+        }
+        return false; // 서버 반영 후 다음 틱에 펼친다
+    }
+
+    /**
+     * 플레이어 바로 옆 칸(발 쪽)과 그 너머 칸(머리 쪽)에 침낭을 펼칠 수 있는 방향을 찾는다.
+     * 물 반대편(뒤) → 좌우 순으로 시도하고 물 쪽(앞)은 쓰지 않는다.
+     */
+    private Direction findBagPlacement(LocalPlayer player) {
+        Direction facing = Direction.fromYRot(lockedYaw);
+        Direction[] candidates = random.nextBoolean()
+                ? new Direction[]{facing.getOpposite(), facing.getClockWise(), facing.getCounterClockWise()}
+                : new Direction[]{facing.getOpposite(), facing.getCounterClockWise(), facing.getClockWise()};
+        Level level = player.level();
+        BlockPos feet = player.blockPosition();
+        for (Direction dir : candidates) {
+            BlockPos foot = feet.relative(dir);
+            BlockPos head = foot.relative(dir);
+            if (isBagSpotFree(level, foot) && isBagSpotFree(level, head)
+                    && level.getEntitiesOfClass(LivingEntity.class, new AABB(foot).minmax(new AABB(head))).isEmpty()) {
+                return dir;
+            }
+        }
+        return null;
+    }
+
+    /** 빈칸이고(물 없음), 위가 막혀 있지 않고, 발밑이 단단한 블록인지. */
+    private static boolean isBagSpotFree(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        BlockPos above = pos.above();
+        BlockState aboveState = level.getBlockState(above);
+        BlockPos below = pos.below();
+        return state.canBeReplaced() && state.getFluidState().isEmpty()
+                && aboveState.getCollisionShape(level, above).isEmpty() && aboveState.getFluidState().isEmpty()
+                && level.getBlockState(below).isFaceSturdy(level, below, Direction.UP);
+    }
+
+    /** 펼쳐 둔 침낭 블록 위치 (머리 쪽 우선). 없으면 null. */
+    private BlockPos findPlacedBag(Level level) {
+        if (bagHead != null && level.getBlockState(bagHead).is(SLEEPING_BAG_BLOCKS)) {
+            return bagHead;
+        }
+        if (bagFoot != null && level.getBlockState(bagFoot).is(SLEEPING_BAG_BLOCKS)) {
+            return bagFoot;
+        }
+        return null;
+    }
+
+    private ItemEntity findDroppedBag(LocalPlayer player) {
+        if (bagHead == null) {
+            return null;
+        }
+        ItemEntity nearest = null;
+        double best = Double.MAX_VALUE;
+        for (ItemEntity item : player.level().getEntitiesOfClass(ItemEntity.class, new AABB(bagHead).inflate(3),
+                e -> e.isAlive() && e.getItem().is(SLEEPING_BAG_ITEMS))) {
+            double d = item.distanceToSqr(player);
+            if (d < best) {
+                best = d;
+                nearest = item;
+            }
+        }
+        return nearest;
+    }
+
+    private static void lookAt(LocalPlayer player, Vec3 point) {
+        Vec3 eye = player.getEyePosition();
+        double dx = point.x - eye.x;
+        double dy = point.y - eye.y;
+        double dz = point.z - eye.z;
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        player.setYRot((float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0));
+        player.setXRot((float) -Math.toDegrees(Math.atan2(dy, horizontal)));
     }
 
     // ---- 통계 ----

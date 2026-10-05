@@ -62,6 +62,11 @@ public final class AfkConfig {
             .comment("한 방향으로 걷는 시간 (틱)")
             .defineInRange("moveTicks", 4, 2, 10);
 
+    // 밤에 침낭으로 자기 (Comforts)
+    public static final ModConfigSpec.BooleanValue SLEEP_AT_NIGHT = BUILDER
+            .comment("밤이 되면 인벤토리의 침낭(Comforts)을 펼쳐서 자고, 일어나면 침낭을 회수한 뒤 제자리로 돌아와 낚시를 이어감")
+            .define("sleepAtNight", true);
+
     public static final ModConfigSpec.BooleanValue SHOW_HUD = BUILDER
             .comment("화면에 상태 HUD 표시")
             .define("showHud", true);

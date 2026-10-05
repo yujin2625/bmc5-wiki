@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
 public final class AntiAfkMover {
     public enum Result { RUNNING, DONE, FAILED }
 
-    private enum Phase { NONE, OUT, RETURN, SETTLE, JUMP }
+    private enum Phase { NONE, OUT, RETURN, SETTLE, JUMP, WALK }
 
     private static final int JITTER_TICKS = 30 * 20;
     private static final int RETURN_TIMEOUT = 60;
@@ -32,6 +32,7 @@ public final class AntiAfkMover {
     private Phase phase = Phase.NONE;
     private int phaseTicks;
     private Vec3 origin = Vec3.ZERO;
+    private Vec3 walkTarget = Vec3.ZERO;
     private float outForward;
     private float outLeft;
     private String failReason = "";
@@ -47,6 +48,15 @@ public final class AntiAfkMover {
 
     public void cancel() {
         phase = Phase.NONE;
+    }
+
+    /**
+     * 목표 지점으로 걸어가도록 입력을 덮어쓴다 (침낭 회수 후 복귀용). tick()은 쓰지 않고,
+     * 도착 판정과 cancel()은 호출하는 쪽이 한다. 매 틱 호출해서 목표를 갱신해도 된다.
+     */
+    public void walkTo(Vec3 target) {
+        walkTarget = target;
+        phase = Phase.WALK;
     }
 
     public void countdown() {
@@ -197,10 +207,11 @@ public final class AntiAfkMover {
                 forward = outForward;
                 left = outLeft;
             }
-            case RETURN -> {
+            case RETURN, WALK -> {
+                Vec3 goal = phase == Phase.WALK ? walkTarget : origin;
                 Vec3 pos = player.position();
-                double dx = origin.x - pos.x;
-                double dz = origin.z - pos.z;
+                double dx = goal.x - pos.x;
+                double dz = goal.z - pos.z;
                 double dist = Math.sqrt(dx * dx + dz * dz);
                 if (dist > 1.0E-4) {
                     // 월드 방향을 플레이어 기준 (앞, 왼쪽) 입력으로 변환. 가까워질수록 입력을 줄여 지나치지 않게 한다.

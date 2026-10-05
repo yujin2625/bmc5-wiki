@@ -56,6 +56,11 @@ public class HudOverlay implements LayeredDraw.Layer {
             lines.add("마지막 회수: " + fc.lastReelReason());
             colors.add(0xFFFFFF);
         }
+        String sleep = fc.sleepStatus(mc.player);
+        if (sleep != null) {
+            lines.add("침낭 수면: " + sleep);
+            colors.add(0xFFFFFF);
+        }
         if (AfkConfig.ANTI_AFK.get()) {
             lines.add("다음 이동 " + formatDuration(fc.mover().secondsUntilMove()));
             colors.add(0xFFFFFF);
