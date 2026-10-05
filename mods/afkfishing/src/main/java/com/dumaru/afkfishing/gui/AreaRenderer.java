@@ -49,6 +49,9 @@ public final class AreaRenderer {
         for (FarmData.ChestEntry chest : data.chests) {
             box(pose, lines, new AABB(chest.pos()).inflate(0.02), 1f, 0.85f, 0.1f);
         }
+        for (String key : data.blacklistChests) {
+            box(pose, lines, new AABB(FarmData.parsePos(key)).inflate(0.04), 1f, 0.2f, 0.2f); // 빨강: 자동 정리 제외
+        }
         if (data.fishChest != null) {
             box(pose, lines, new AABB(FarmData.pos(data.fishChest)).inflate(0.03), 0.2f, 0.9f, 0.9f);
         }

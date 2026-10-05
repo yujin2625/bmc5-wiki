@@ -72,6 +72,8 @@ public final class FarmData {
     public int[] fishChest;
     /** Star Catcher 물고기를 넣을 태클박스 */
     public int[] tackleBox;
+    /** 자동 정리에서 뺄 상자 ("x,y,z") */
+    public Set<String> blacklistChests = new LinkedHashSet<>();
     /** 빈 농경지에 심을 기본 작물 (그 자리에 뭐가 있었는지 모를 때). null이면 심지 않음 */
     public String defaultPlant;
     /** 흙 위치("x,y,z") → 마지막으로 본 작물 id */
@@ -131,6 +133,9 @@ public final class FarmData {
         }
         if (data.plantMemory == null) {
             data.plantMemory = new HashMap<>();
+        }
+        if (data.blacklistChests == null) {
+            data.blacklistChests = new LinkedHashSet<>();
         }
         if (data.learnedProducts == null) {
             data.learnedProducts = new HashMap<>();
@@ -220,6 +225,16 @@ public final class FarmData {
             }
         }
         return list;
+    }
+
+    /** 자동 정리 제외 상자인지 (큰 상자는 다른 쪽이 제외돼 있어도 제외). */
+    public boolean isBlacklisted(BlockPos pos, BlockPos otherHalf) {
+        return blacklistChests.contains(posKey(pos)) || (otherHalf != null && blacklistChests.contains(posKey(otherHalf)));
+    }
+
+    public static BlockPos parsePos(String key) {
+        String[] p = key.split(",");
+        return new BlockPos(Integer.parseInt(p[0]), Integer.parseInt(p[1]), Integer.parseInt(p[2]));
     }
 
     public void learn(String cropId, String itemId) {

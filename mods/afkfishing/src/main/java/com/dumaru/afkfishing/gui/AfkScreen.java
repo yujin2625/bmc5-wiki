@@ -330,6 +330,22 @@ public class AfkScreen extends Screen {
             changed(data);
         }).bounds(left + 44, y, COL_W * 2 + 10 - 88, BTN_H).build());
         unregister.active = hasLooked && data.chestAt(looked) != null;
+        y += ROW_H;
+        // 자동 정리 제외(블랙리스트)
+        boolean blacklisted = hasLooked && data.blacklistChests.contains(FarmData.posKey(looked));
+        Button black = addRenderableWidget(Button.builder(Component.literal(
+                blacklisted ? "바라보는 상자: 자동 정리 제외 해제" : "바라보는 상자: 자동 정리에서 제외"), b -> {
+            if (!data.blacklistChests.remove(FarmData.posKey(looked))) {
+                data.blacklistChests.add(FarmData.posKey(looked));
+            }
+            changed(data);
+        }).bounds(left, y, COL_W * 2 + 10 - 84, BTN_H).build());
+        black.active = lookedIsContainer || blacklisted;
+        Button clearBlack = addRenderableWidget(Button.builder(Component.literal("제외 전부 해제"), b -> {
+            data.blacklistChests.clear();
+            changed(data);
+        }).bounds(right + COL_W - 80, y, 80, BTN_H).build());
+        clearBlack.active = !data.blacklistChests.isEmpty();
         return y + ROW_H;
     }
 
@@ -477,7 +493,8 @@ public class AfkScreen extends Screen {
         g.drawCenteredString(font, area, width / 2, y, 0xAAAAAA);
         y += 10;
         long otherChests = data.chests.stream().filter(c -> c.catchAll).count();
-        String auto = AfkConfig.FARM_AUTO_CHESTS.get() && data.hasArea() ? " · 범위 안 자동 상자 " + FarmController.INSTANCE.autoChestCount() + "개" : "";
+        String auto = AfkConfig.FARM_AUTO_CHESTS.get() && data.hasArea() ? " · 범위 안 자동 상자 " + FarmController.INSTANCE.autoChestCount() + "개"
+                + (data.blacklistChests.isEmpty() ? "" : " (제외 " + data.blacklistChests.size() + "개)") : "";
         String extra = "작물 상자 " + data.chests.stream().filter(c -> !c.catchAll).count() + "개 · 기타 상자 " + otherChests + "개" + auto + " · 낚시 자리 "
                 + (data.fishSpot == null ? "없음" : "지정됨");
         g.drawCenteredString(font, extra, width / 2, y, 0xAAAAAA);
