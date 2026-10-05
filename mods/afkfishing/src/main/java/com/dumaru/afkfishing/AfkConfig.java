@@ -138,6 +138,26 @@ public final class AfkConfig {
     public static final ModConfigSpec.BooleanValue FARM_AVOID_FARMLAND = BUILDER
             .comment("이동할 때 되도록 농경지를 밟지 않고 길로 다님")
             .define("farmAvoidFarmland", true);
+    // 사람처럼 움직이기 (공통)
+    public static final ModConfigSpec.BooleanValue HUMAN_LOOK = BUILDER
+            .comment("시선을 한 번에 꺾지 않고 부드럽게 돌림 (약간의 오차 포함)")
+            .define("humanLook", true);
+    public static final ModConfigSpec.IntValue LOOK_SPEED = BUILDER
+            .comment("시선 회전 최대 속도 (도/초)")
+            .defineInRange("lookSpeed", 300, 90, 720);
+    public static final ModConfigSpec.BooleanValue HUMAN_WALK = BUILDER
+            .comment("가는 방향을 바라보며 걷고, 경로를 곧게 다듬고, 출발·정지할 때 가속·감속")
+            .define("humanWalk", true);
+    public static final ModConfigSpec.BooleanValue SPRINT_LONG = BUILDER
+            .comment("멀리 곧게 갈 때는 달림")
+            .define("sprintLong", true);
+    public static final ModConfigSpec.BooleanValue MINIGAME_HUMAN = BUILDER
+            .comment("Star Catcher 미니게임에서 표적 정중앙이 아니라 표적 안 아무 데서나 누름")
+            .define("minigameHuman", true);
+    public static final ModConfigSpec.IntValue MINIGAME_MISS_PERCENT = BUILDER
+            .comment("Star Catcher 미니게임에서 일부러 살짝 빗나가게 누를 확률 (%)")
+            .defineInRange("minigameMissPercent", 3, 0, 20);
+
     public static final ModConfigSpec.BooleanValue FARM_SHOW_AREA = BUILDER
             .comment("농장 범위·상자·낚시 자리를 화면에 테두리로 표시 (설정 화면이 열려 있거나 농사 중일 때)")
             .define("farmShowArea", true);

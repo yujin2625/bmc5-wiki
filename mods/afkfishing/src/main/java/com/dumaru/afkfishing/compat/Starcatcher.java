@@ -60,6 +60,13 @@ public final class Starcatcher {
     private static Field spotCanHit;
     private static Field spotRemoved;
     private static Method canHitSpot;
+    private static Field spotBehaviour;
+    private static Field treasureActive;
+    private static Field treasureProgress;
+    private static final java.util.Random RANDOM = new java.util.Random();
+    private static final java.util.Map<Object, Float> aims = new java.util.IdentityHashMap<>();
+    private static Screen aimScreen;
+    private static boolean holdingForTreasure;
 
     private Starcatcher() {
     }
@@ -94,6 +101,9 @@ public final class Starcatcher {
             spotCanHit = spot.getField("canHit");
             spotRemoved = spot.getField("removed");
             canHitSpot = modifier.getMethod("canHitSpot", screenClass, spot);
+            spotBehaviour = spot.getField("behaviour");
+            treasureActive = screenClass.getField("treasureActive");
+            treasureProgress = screenClass.getField("treasureProgress");
             available = true;
         } catch (ReflectiveOperationException | RuntimeException e) {
             LOGGER.warn("[afkfishing] Star Catcher 지원을 켜지 못했습니다 (버전이 다를 수 있음)", e);
@@ -166,15 +176,22 @@ public final class Starcatcher {
     }
 
     /**
-     * 미니게임 한 틱 분량을 둔다. 이번 틱부터 다음 틱 사이에 손잡이가 지나갈 표적이 있으면,
-     * 손잡이가 그 표적 한가운데에 오는 순간(틱 사이의 시점)에 누른 것으로 친다. 겹치지 않으면 누르지 않으므로 헛치지 않는다.
-     * 눌렀으면 true.
+     * 미니게임 한 틱 분량을 둔다. 이번 틱부터 다음 틱 사이에 손잡이가 지나갈 표적이 있으면, 손잡이가 노린 지점에 오는
+     * 순간(틱 사이의 시점)에 누른 것으로 친다. 눌렀으면 true.
+     *
+     * human: 표적 정중앙이 아니라 표적 안의 아무 지점을 노린다. missPercent: 표적마다 이 확률로 살짝 바깥을 노려 빗나간다.
+     * 보물: 보물 표적을 먼저 맞히고, 보물 게이지가 덜 찼는데 물고기 게이지가 거의 찼으면 일반 표적은 건너뛴다
+     * (물고기 게이지가 먼저 다 차면 미니게임이 끝나서 보물을 못 받는다).
      */
-    public static boolean playMinigameTick(Screen screen) {
+    public static boolean playMinigameTick(Screen screen, boolean human, int missPercent) {
         if (!isMinigame(screen)) {
             return false;
         }
         try {
+            if (screen != aimScreen) {
+                aimScreen = screen;
+                aims.clear();
+            }
             float handle = handlePos.getFloat(screen);
             float speed = handleSpeed.getFloat(screen);
             int rot = currentRotation.getInt(screen);
@@ -182,48 +199,84 @@ public final class Starcatcher {
             if (speed <= 0 || rot == 0) {
                 return false;
             }
+            // 보물을 노리는 중이면 물고기 게이지를 너무 빨리 채우지 않는다
+            boolean chasingTreasure = treasureActive.getBoolean(screen) && treasureProgress.getInt(screen) < 100;
+            float fishRatio = progress.getFloat(screen) / Math.max(1, hp.getInt(screen));
+            if (!chasingTreasure || fishRatio < 0.4f) {
+                holdingForTreasure = false;
+            } else if (fishRatio >= 0.8f) {
+                holdingForTreasure = true;
+            }
             // getHandlePosPrecise() = handlePos + speed * partial * rot + hitDelay * speed * rot
             float base = handle + speed * delay * rot;
             List<?> spots = (List<?>) getActiveSweetSpots.invoke(screen);
             List<?> modifiers = (List<?>) getModifiers.invoke(screen);
             Object bestSpot = null;
             float bestT = Float.MAX_VALUE;
+            boolean bestTreasure = false;
             for (Object spot : spots) {
                 if (!spotCanHit.getBoolean(spot) || spotRemoved.getBoolean(spot) || !allowed(screen, modifiers, spot)) {
                     continue;
                 }
+                boolean treasure = isTreasure(spot);
+                if (holdingForTreasure && !treasure) {
+                    continue;
+                }
                 float pos = spotPos.getFloat(spot);
                 int half = spotThickness.getInt(spot) / 2;
-                float ahead = wrap((pos - base) * rot); // 손잡이 진행 방향으로 표적 한가운데까지 남은 각도
+                float offset = aims.computeIfAbsent(spot, k -> chooseAim(half, human, treasure ? 0 : missPercent));
+                float ahead = wrap((pos + offset - base) * rot); // 손잡이 진행 방향으로 노린 지점까지 남은 각도
                 float t;
                 if (ahead / speed < 1.0f) {
-                    t = ahead / speed; // 이번 틱 안에 한가운데를 지나감 → 그 순간에 누름
-                } else if (overlaps(base, pos, half)) {
-                    t = 0; // 한가운데는 지났지만 아직 표적 안
+                    t = ahead / speed; // 이번 틱 안에 노린 지점을 지나감 → 그 순간에 누름
+                } else if (Math.abs(offset) < half && overlaps(base, pos, half)) {
+                    t = 0; // 노린 지점은 지났지만 아직 표적 안
                 } else {
                     continue;
                 }
-                if (t < bestT) {
+                // 보물 표적이 먼저, 그다음 먼저 닿는 표적
+                if (bestSpot == null || (treasure && !bestTreasure) || (treasure == bestTreasure && t < bestT)) {
                     bestT = t;
                     bestSpot = spot;
+                    bestTreasure = treasure;
                 }
             }
             if (bestSpot == null) {
                 return false;
             }
             float t = Math.max(0, Math.min(0.999f, bestT));
+            float offset = aims.getOrDefault(bestSpot, 0f);
+            boolean intendedMiss = Math.abs(offset) >= spotThickness.getInt(bestSpot) / 2;
             float precise = base + speed * t * rot;
-            if (!overlaps(precise, spotPos.getFloat(bestSpot), spotThickness.getInt(bestSpot) / 2)) {
+            if (!intendedMiss && !overlaps(precise, spotPos.getFloat(bestSpot), spotThickness.getInt(bestSpot) / 2)) {
                 return false;
             }
             partial.setFloat(screen, t);
             inputPressed.invoke(screen);
+            aims.remove(bestSpot); // 다음에 돌아올 때는 새로 노린다
             return true;
         } catch (ReflectiveOperationException | RuntimeException e) {
             LOGGER.warn("[afkfishing] Star Catcher 미니게임 자동 진행 실패", e);
             available = false;
             return false;
         }
+    }
+
+    /** 표적 중심에서 얼마나 벗어난 곳을 노릴지. 빗나가기로 했으면 표적 바로 바깥. */
+    private static float chooseAim(int half, boolean human, int missPercent) {
+        if (missPercent > 0 && RANDOM.nextInt(100) < missPercent) {
+            float sign = RANDOM.nextBoolean() ? 1 : -1;
+            return sign * (half + 1 + RANDOM.nextFloat() * 3);
+        }
+        if (!human || half <= 1) {
+            return 0;
+        }
+        return (RANDOM.nextFloat() * 2 - 1) * half * 0.7f;
+    }
+
+    private static boolean isTreasure(Object spot) throws ReflectiveOperationException {
+        Object behaviour = spotBehaviour.get(spot);
+        return behaviour != null && behaviour.getClass().getSimpleName().contains("Treasure");
     }
 
     private static boolean allowed(Screen screen, List<?> modifiers, Object spot) throws ReflectiveOperationException {

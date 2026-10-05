@@ -88,7 +88,6 @@ public final class AntiAfkMover {
             scheduleNext(); // 이상한 상태에서는 이번 이동을 건너뛴다
             return false;
         }
-        player.setYRot(yaw);
         origin = player.position();
         phaseTicks = 0;
 

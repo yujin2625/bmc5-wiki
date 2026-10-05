@@ -34,6 +34,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.dumaru.afkfishing.common.AutoEater;
+import com.dumaru.afkfishing.common.Look;
 import com.dumaru.afkfishing.compat.Starcatcher;
 import net.minecraft.world.entity.Entity;
 import com.dumaru.afkfishing.common.SleepModule;
@@ -268,6 +269,9 @@ public final class FishingController {
         }
         state = State.IDLE;
         mover.cancel();
+        if (!embedded) {
+            Look.INSTANCE.release(); // 농사가 시킨 낚시면 농사가 계속 시선을 쓴다
+        }
         lootCheckIn = -1;
         lastMessage = reason;
         LocalPlayer player = Minecraft.getInstance().player;
@@ -360,8 +364,11 @@ public final class FishingController {
         if (!ensureRodInHand(mc, player) || !ensureLureInOffhand(mc, player)) {
             return;
         }
-        player.setYRot(lockedYaw);
-        player.setXRot(lockedPitch);
+        // 낚시 방향으로 천천히 돌아선 뒤 던진다 (이동·잠 뒤에는 방향이 바뀌어 있을 수 있음)
+        Look.INSTANCE.setAngles(player, lockedYaw, lockedPitch, 0.6f);
+        if (!Look.INSTANCE.aligned(player, 1.5f) && stateTicks < 40) {
+            return;
+        }
         starcatcher = Starcatcher.isRod(player.getMainHandItem());
         if (starcatcher) {
             openWater = null; // Star Catcher는 바닐라 보물 조건과 상관없음
@@ -525,7 +532,7 @@ public final class FishingController {
             if (p >= 0) {
                 minigameProgress = p;
             }
-            Starcatcher.playMinigameTick(mc.screen);
+            Starcatcher.playMinigameTick(mc.screen, AfkConfig.MINIGAME_HUMAN.get(), AfkConfig.MINIGAME_MISS_PERCENT.get());
             return;
         }
         if (minigameSeen) {
@@ -654,9 +661,8 @@ public final class FishingController {
     }
 
     private void beginSleep(LocalPlayer player) {
-        // 바라보는 방향(물 쪽)을 낚시 방향으로 맞춰 두면 침낭은 물 반대편을 우선한다.
-        player.setYRot(lockedYaw);
-        sleep.begin(player.position(), null);
+        // 낚시 방향(물 쪽)을 알려 주면 침낭은 물 반대편을 우선한다.
+        sleep.begin(player.position(), null, lockedYaw);
         setState(State.SLEEP, 0);
     }
 

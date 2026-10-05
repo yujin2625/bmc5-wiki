@@ -65,6 +65,8 @@ public final class SleepModule {
     private BlockPos bagFoot;
     private Direction bagDir;
     private boolean failed;
+    /** 침낭 자리를 고를 때 "앞"으로 칠 방향 (낚시면 물 쪽). null이면 지금 바라보는 방향 */
+    private Float facingYaw;
     private String failReason = "";
 
     public SleepModule(String prefix) {
@@ -135,7 +137,8 @@ public final class SleepModule {
      * 잠자기를 시작한다. returnSpot이 있으면 일어난 뒤 그 자리로 돌아온다(낚시).
      * forbidden 안(농장)에는 침낭을 펼치지 않는다.
      */
-    public void begin(Vec3 returnSpot, AABB forbidden) {
+    public void begin(Vec3 returnSpot, AABB forbidden, Float facingYaw) {
+        this.facingYaw = facingYaw;
         this.returnSpot = returnSpot;
         this.forbidden = forbidden;
         this.failed = false;
@@ -290,10 +293,13 @@ public final class SleepModule {
             fail(player, "침낭 자리가 막힘");
             return;
         }
-        // 침낭(침대)은 서버가 알고 있는 플레이어 방향으로 머리 쪽이 펼쳐진다.
+        // 침낭(침대)은 서버가 알고 있는 플레이어 방향으로 머리 쪽이 펼쳐진다. 그 방향으로 천천히 돌아선 뒤 놓는다.
         BlockPos ground = bagFoot.below();
         Vec3 hit = new Vec3(ground.getX() + 0.5, ground.getY() + 1.0, ground.getZ() + 0.5);
-        Util.lookAt(player, hit);
+        Look.INSTANCE.setAngles(player, bagDir.toYRot(), Look.pitchTo(player, hit), 0f);
+        if (!Look.INSTANCE.aligned(player, 2f) && phaseTicks < 60) {
+            return;
+        }
         player.setYRot(bagDir.toYRot());
         Util.sendRotation(mc, player);
         InteractionResult result = mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
@@ -322,7 +328,10 @@ public final class SleepModule {
             return;
         }
         // 침낭은 강도 0.1이라 맨손으로도 몇 틱이면 부서진다. 아이템은 머리 쪽에서 떨어진다.
-        Util.lookAt(player, Vec3.atBottomCenterOf(target).add(0, 0.1, 0));
+        Look.INSTANCE.lookAt(player, Vec3.atBottomCenterOf(target).add(0, 0.1, 0), 1f);
+        if (!Look.INSTANCE.aligned(player, 6f) && phaseTicks < 40) {
+            return;
+        }
         mc.gameMode.continueDestroyBlock(target, Direction.UP);
         player.swing(InteractionHand.MAIN_HAND);
     }
@@ -352,7 +361,7 @@ public final class SleepModule {
     private List<Placement> findPlacements(LocalPlayer player) {
         Level level = player.level();
         BlockPos feet = player.blockPosition();
-        Vec3 look = Vec3.directionFromRotation(0, player.getYRot());
+        Vec3 look = Vec3.directionFromRotation(0, facingYaw != null ? facingYaw : player.getYRot());
         AABB playerBox = player.getBoundingBox();
         int radius = AfkConfig.BAG_SEARCH_RADIUS.get();
         List<Placement> result = new ArrayList<>();

@@ -5,6 +5,7 @@ import com.dumaru.afkfishing.AntiAfkMover;
 import com.dumaru.afkfishing.FishingController;
 import com.dumaru.afkfishing.common.AutoEater;
 import com.dumaru.afkfishing.common.InvUtil;
+import com.dumaru.afkfishing.common.Look;
 import com.dumaru.afkfishing.common.Navigator;
 import com.dumaru.afkfishing.common.SleepModule;
 import com.dumaru.afkfishing.common.Util;
@@ -111,6 +112,7 @@ public final class FarmController {
     private State state = State.IDLE;
     private int stateTicks;
     private int actionTick = -1;
+    private int faceStart = -1;
     private FarmData data;
     private Task task;
     private float lastHealth;
@@ -333,6 +335,7 @@ public final class FarmController {
         }
         state = State.IDLE;
         task = null;
+        Look.INSTANCE.release();
         lastMessage = reason;
         if (data != null) {
             data.save();
@@ -470,6 +473,16 @@ public final class FarmController {
         state = next;
         stateTicks = 0;
         actionTick = -1;
+        faceStart = -1;
+    }
+
+    /** 목표 쪽으로 시선을 천천히 돌린다. 다 돌았거나 너무 오래 걸리면 true (그때 행동한다). */
+    private boolean faceTarget(LocalPlayer player, Vec3 point) {
+        Look.INSTANCE.lookAt(player, point, 1.2f);
+        if (faceStart < 0) {
+            faceStart = stateTicks;
+        }
+        return Look.INSTANCE.aligned(player, 6f) || stateTicks - faceStart > 25;
     }
 
     // ---- 다음 작업 고르기 ----
@@ -771,10 +784,12 @@ public final class FarmController {
         if (!holdHarvestTool(mc, player)) {
             return; // 도구를 손에 드는 중
         }
+        Vec3 hit = Vec3.atCenterOf(task.pos);
+        if (!faceTarget(player, hit)) {
+            return;
+        }
         if (actionTick < 0 || stateTicks - actionTick >= 10) {
             Direction face = Util.faceToward(player, task.pos);
-            Vec3 hit = Vec3.atCenterOf(task.pos);
-            Util.lookAt(player, hit);
             if (actionTick < 0) {
                 startLearning(player, task.cropId, task.pos);
             }
@@ -833,8 +848,10 @@ public final class FarmController {
                 return;
             }
         }
+        if (!faceTarget(player, Vec3.atCenterOf(task.pos))) {
+            return;
+        }
         Direction face = Util.faceToward(player, task.pos);
-        Util.lookAt(player, Vec3.atCenterOf(task.pos));
         mc.gameMode.continueDestroyBlock(task.pos, face);
         player.swing(InteractionHand.MAIN_HAND);
     }
@@ -866,9 +883,12 @@ public final class FarmController {
             }
             return;
         }
-        if (stateTicks % 10 == 1) {
-            Vec3 hit = new Vec3(soil.getX() + 0.5, soil.getY() + 1.0, soil.getZ() + 0.5);
-            Util.lookAt(player, hit);
+        Vec3 hit = new Vec3(soil.getX() + 0.5, soil.getY() + 1.0, soil.getZ() + 0.5);
+        if (!faceTarget(player, hit)) {
+            return;
+        }
+        if (actionTick < 0 || stateTicks - actionTick >= 10) {
+            actionTick = stateTicks;
             InteractionResult result = mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
                     new BlockHitResult(hit, Direction.UP, soil, false));
             if (result.shouldSwing()) {
@@ -890,7 +910,9 @@ public final class FarmController {
             return;
         }
         Vec3 hit = Vec3.atCenterOf(task.pos);
-        Util.lookAt(player, hit);
+        if (!faceTarget(player, hit)) {
+            return;
+        }
         InteractionResult result = mc.gameMode.useItemOn(player, InteractionHand.MAIN_HAND,
                 new BlockHitResult(hit, Util.faceToward(player, task.pos), task.pos, false));
         if (result.shouldSwing()) {
@@ -940,10 +962,9 @@ public final class FarmController {
     }
 
     private void beginSleep(LocalPlayer player) {
-        if (data.fishSpot != null && data.fishSpot.pos().distanceTo(player.position()) < 3) {
-            player.setYRot(data.fishSpot.yaw); // 물 쪽을 보고 있으면 침낭은 물 반대편을 우선한다
-        }
-        sleep.begin(null, data.areaBox().inflate(1));
+        Float facing = data.fishSpot != null && data.fishSpot.pos().distanceTo(player.position()) < 3
+                ? data.fishSpot.yaw : null; // 낚시 자리면 물 반대편을 우선
+        sleep.begin(null, data.areaBox().inflate(1), facing);
         setState(State.SLEEP);
     }
 
@@ -969,8 +990,6 @@ public final class FarmController {
         Navigator.Result r = Navigator.INSTANCE.tick(player);
         if (r == Navigator.Result.ARRIVED) {
             FarmData.FishSpot spot = data.fishSpot;
-            player.setYRot(spot.yaw);
-            player.setXRot(spot.pitch);
             if (FishingController.INSTANCE.startEmbedded(spot.yaw, spot.pitch)) {
                 setState(State.FISHING);
             } else {
@@ -1098,7 +1117,9 @@ public final class FarmController {
         // 상자 열기
         Direction face = Util.faceToward(player, pos);
         Vec3 hit = Util.faceCenter(pos, face);
-        Util.lookAt(player, hit);
+        if (!faceTarget(player, hit)) {
+            return;
+        }
         if (player.getMainHandItem().getItem() instanceof BlockItem) {
             InvUtil.selectEmptyHand(player);
         }

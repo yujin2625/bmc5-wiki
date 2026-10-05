@@ -58,6 +58,10 @@ public final class Navigator {
     private int ticks;
     private int timeoutTicks;
     private String failReason = "";
+    private final java.util.Random random = new java.util.Random();
+    private double ramp = 1.0;
+    private double tripSpeed = 1.0;
+    private float walkPitch = 20f;
 
     // applyInput에서 쓸 이번 틱 입력
     private double moveX;
@@ -120,6 +124,9 @@ public final class Navigator {
         this.ticks = 0;
         this.failReason = "";
         this.active = true;
+        this.ramp = AfkConfig.HUMAN_WALK.get() ? 0.35 : 1.0;
+        this.tripSpeed = 0.9 + random.nextDouble() * 0.1;
+        this.walkPitch = 12f + random.nextFloat() * 16f;
         resetProgress();
         clearMove();
     }
@@ -133,6 +140,9 @@ public final class Navigator {
     }
 
     public void cancel() {
+        if (active) {
+            stopSprint();
+        }
         active = false;
         clearMove();
     }
@@ -147,7 +157,6 @@ public final class Navigator {
         if (player.isInWater() || player.isInLava()) {
             return fail("이동 중 물/용암에 빠짐");
         }
-        player.setSprinting(false);
         if (waypoints == null) {
             String error = plan(player);
             if (error != null) {
@@ -156,12 +165,18 @@ public final class Navigator {
         }
         Vec3 pos = player.position();
         clearMove();
+        boolean human = AfkConfig.HUMAN_WALK.get();
+        boolean last;
+        double speed;
+        double targetDist;
 
         if (!precisePhase && index < waypoints.size()) {
             Vec3 wp = waypoints.get(index);
             double dh = Util.horizontalDistance(pos, wp);
-            boolean last = index == waypoints.size() - 1;
-            if (dh < (last ? 0.25 : 0.35) && Math.abs(pos.y - wp.y) < 0.6) {
+            last = index == waypoints.size() - 1;
+            // 사람처럼 걸을 때는 꺾이는 지점을 조금 일찍 넘겨서 모서리를 둥글게 돈다
+            double pass = last ? 0.25 : (human ? 0.45 : 0.35);
+            if (dh < pass && Math.abs(pos.y - wp.y) < 0.6) {
                 index++;
                 resetProgress();
                 if (index >= waypoints.size()) {
@@ -172,25 +187,50 @@ public final class Navigator {
                 }
                 return Result.RUNNING;
             }
-            boolean slow = last;
             moveX = wp.x - pos.x;
             moveZ = wp.z - pos.z;
-            moveSpeed = slow ? Math.max(0.2, Math.min(1.0, dh / 0.5)) : 1.0;
+            speed = last ? Math.max(0.2, Math.min(1.0, dh / 0.5)) : 1.0;
             moveJump = wp.y - pos.y > 0.55 && dh < 1.5 && player.onGround();
             trackProgress(dh + Math.abs(wp.y - pos.y));
+            targetDist = dh;
         } else if (preciseEnd != null) {
             precisePhase = true;
+            last = true;
             double d = Util.horizontalDistance(pos, preciseEnd);
             if (d < precision) {
                 return arrive();
             }
             moveX = preciseEnd.x - pos.x;
             moveZ = preciseEnd.z - pos.z;
-            moveSpeed = Math.max(0.15, Math.min(1.0, d / 0.35));
+            speed = Math.max(0.15, Math.min(1.0, d / 0.35));
             trackProgress(d);
+            targetDist = d;
         } else {
             return arrive();
         }
+
+        if (human) {
+            // 출발할 때 천천히 가속, 이번 이동의 걸음 빠르기는 조금씩 다르게
+            ramp = Math.min(1.0, ramp + 0.12);
+            speed = Math.min(speed, ramp) * tripSpeed;
+            // 가는 방향을 바라본다. 바로 앞(정밀하게 자리 잡는 중)이면 돌지 않고 게걸음으로 맞춘다.
+            if (!last || targetDist > 0.7) {
+                float yaw = (float) (Math.toDegrees(Math.atan2(moveZ, moveX)) - 90.0);
+                Look.INSTANCE.setAngles(player, yaw, walkPitch, 2.5f);
+            }
+            float err = Look.INSTANCE.yawError(player);
+            if (err > 100) {
+                speed *= 0.25; // 거의 뒤돌아야 하면 먼저 몸을 돌린다
+            } else if (err > 50) {
+                speed *= 0.6;
+            }
+            boolean sprint = AfkConfig.SPRINT_LONG.get() && !last && !moveJump && err < 15
+                    && remainingDistance(pos) > 10 && player.getFoodData().getFoodLevel() > 6;
+            player.setSprinting(sprint);
+        } else {
+            player.setSprinting(false);
+        }
+        moveSpeed = speed;
 
         if (stuckTicks > STUCK_TICKS) {
             if (precisePhase && preciseEnd != null && Util.horizontalDistance(pos, preciseEnd) < 0.4) {
@@ -207,6 +247,16 @@ public final class Navigator {
         return Result.RUNNING;
     }
 
+    private double remainingDistance(Vec3 pos) {
+        double total = 0;
+        Vec3 prev = pos;
+        for (int i = index; i < waypoints.size(); i++) {
+            total += Util.horizontalDistance(prev, waypoints.get(i));
+            prev = waypoints.get(i);
+        }
+        return total;
+    }
+
     /** MovementInputUpdateEvent에서 호출. */
     public void applyInput(Input input, LocalPlayer player) {
         if (!active) {
@@ -218,6 +268,7 @@ public final class Navigator {
     private Result arrive() {
         active = false;
         clearMove();
+        stopSprint();
         return Result.ARRIVED;
     }
 
@@ -225,7 +276,15 @@ public final class Navigator {
         failReason = reason;
         active = false;
         clearMove();
+        stopSprint();
         return Result.FAILED;
+    }
+
+    private static void stopSprint() {
+        LocalPlayer player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player != null) {
+            player.setSprinting(false);
+        }
     }
 
     private void clearMove() {
@@ -289,7 +348,7 @@ public final class Navigator {
                 continue;
             }
             if (goal.isGoal(node.ground, node.standY)) {
-                buildWaypoints(node);
+                buildWaypoints(node, level, avoidFarmland);
                 return null;
             }
             if (++expanded > MAX_NODES) {
@@ -375,23 +434,84 @@ public final class Navigator {
         return null;
     }
 
-    private void buildWaypoints(Node end) {
-        List<Vec3> list = new ArrayList<>();
+    private void buildWaypoints(Node end, Level level, boolean avoidFarmland) {
+        List<Node> nodes = new ArrayList<>();
         for (Node n = end; n != null; n = n.parent) {
-            list.add(new Vec3(n.ground.getX() + 0.5, n.standY, n.ground.getZ() + 0.5));
+            nodes.add(n);
         }
-        Collections.reverse(list);
-        // 첫 노드는 지금 서 있는 칸. 이미 그 칸 안에 있으므로 건너뛴다.
-        if (list.size() > 1) {
-            list.remove(0);
-        } else if (preciseEnd == null) {
-            list.clear();
-        } else {
-            list.clear();
+        Collections.reverse(nodes);
+        List<Vec3> list = new ArrayList<>();
+        if (nodes.size() > 1) {
+            if (AfkConfig.HUMAN_WALK.get() && replans == 0) { // 막혀서 다시 찾는 중이면 지름길 없이 칸 단위로
+                // 줄 당기기: 곧게 갈 수 있는 가장 먼 지점까지 한 번에 간다. 꺾이는 지점은 칸 안에서 조금씩 비튼다.
+                int a = 0;
+                int lastIndex = nodes.size() - 1;
+                while (a < lastIndex) {
+                    int next = a + 1;
+                    for (int j = lastIndex; j > a + 1; j--) {
+                        if (straightClear(level, nodes.get(a), nodes.get(j), avoidFarmland)) {
+                            next = j;
+                            break;
+                        }
+                    }
+                    Node n = nodes.get(next);
+                    double jitter = next == lastIndex ? 0 : 0.15;
+                    list.add(new Vec3(n.ground.getX() + 0.5 + (random.nextDouble() * 2 - 1) * jitter, n.standY,
+                            n.ground.getZ() + 0.5 + (random.nextDouble() * 2 - 1) * jitter));
+                    a = next;
+                }
+            } else {
+                // 첫 노드는 지금 서 있는 칸이라 건너뛴다.
+                for (int i = 1; i < nodes.size(); i++) {
+                    Node n = nodes.get(i);
+                    list.add(new Vec3(n.ground.getX() + 0.5, n.standY, n.ground.getZ() + 0.5));
+                }
+            }
+        } else if (preciseEnd != null) {
             precisePhase = true;
         }
         waypoints = list;
         index = 0;
+    }
+
+    /**
+     * a에서 b까지 같은 높이로 곧게 걸어갈 수 있는지. 0.25칸 간격으로 짚으며 몸 폭(좌우 0.3)까지
+     * 밟을 수 있는 같은 높이의 땅인지 본다. 농경지를 피하는 중이면 농경지를 가로지르는 지름길은 쓰지 않는다.
+     */
+    private static boolean straightClear(Level level, Node a, Node b, boolean avoidFarmland) {
+        if (Math.abs(a.standY - b.standY) > 0.01) {
+            return false;
+        }
+        double ax = a.ground.getX() + 0.5;
+        double az = a.ground.getZ() + 0.5;
+        double dx = b.ground.getX() + 0.5 - ax;
+        double dz = b.ground.getZ() + 0.5 - az;
+        double len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 1.0E-4) {
+            return true;
+        }
+        double px = -dz / len * 0.3;
+        double pz = dx / len * 0.3;
+        boolean endsOnFarmland = level.getBlockState(a.ground).getBlock() instanceof FarmBlock
+                || level.getBlockState(b.ground).getBlock() instanceof FarmBlock;
+        int steps = (int) Math.ceil(len / 0.25);
+        int y = a.ground.getY();
+        for (int i = 0; i <= steps; i++) {
+            double t = i / (double) steps;
+            for (int side = -1; side <= 1; side++) {
+                double x = ax + dx * t + px * side;
+                double z = az + dz * t + pz * side;
+                BlockPos cell = new BlockPos(net.minecraft.util.Mth.floor(x), y, net.minecraft.util.Mth.floor(z));
+                double top = standTop(level, cell, false);
+                if (Double.isNaN(top) || Math.abs(cell.getY() + top - a.standY) > 0.01) {
+                    return false;
+                }
+                if (avoidFarmland && !endsOnFarmland && level.getBlockState(cell).getBlock() instanceof FarmBlock) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static BlockPos startGround(Level level, LocalPlayer player) {

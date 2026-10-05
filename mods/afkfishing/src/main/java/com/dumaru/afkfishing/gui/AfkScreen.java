@@ -126,6 +126,10 @@ public class AfkScreen extends Screen {
                 .withValues(AfkConfig.MovePattern.values())
                 .withInitialValue(AfkConfig.MOVE_PATTERN.get())
                 .create(left, y, COL_W, BTN_H, Component.literal("이동 패턴"), (b, v) -> AfkConfig.MOVE_PATTERN.set(v)));
+        addRenderableWidget(toggle(right, y, "미니게임 사람처럼", AfkConfig.MINIGAME_HUMAN));
+        y += ROW_H;
+        addRenderableWidget(new IntSlider(left, y, AfkConfig.MINIGAME_MISS_PERCENT, 0, 20, 1,
+                v -> Component.literal("미니게임 실수 확률: " + v + "%")));
         return y + ROW_H;
     }
 
@@ -334,6 +338,13 @@ public class AfkScreen extends Screen {
         addRenderableWidget(toggle(right, y, "피격 시 정지", AfkConfig.STOP_ON_DAMAGE));
         y += ROW_H;
         addRenderableWidget(toggle(left, y, "HUD 표시", AfkConfig.SHOW_HUD));
+        addRenderableWidget(toggle(right, y, "부드러운 시선 회전", AfkConfig.HUMAN_LOOK));
+        y += ROW_H;
+        addRenderableWidget(new IntSlider(left, y, AfkConfig.LOOK_SPEED, 90, 720, 30,
+                v -> Component.literal("시선 회전 속도: " + v + "°/초")));
+        addRenderableWidget(toggle(right, y, "자연스럽게 걷기", AfkConfig.HUMAN_WALK));
+        y += ROW_H;
+        addRenderableWidget(toggle(left, y, "멀리 갈 때 달리기", AfkConfig.SPRINT_LONG));
         return y + ROW_H;
     }
 

@@ -36,6 +36,7 @@ public final class AutoEater {
     private boolean active;
     private int ticks;
     private int startFood;
+    private float eatYaw;
 
     public boolean isActive() {
         return active;
@@ -82,6 +83,7 @@ public final class AutoEater {
         active = true;
         ticks = 0;
         startFood = player.getFoodData().getFoodLevel();
+        eatYaw = player.getYRot();
     }
 
     public Result tick(Minecraft mc, LocalPlayer player, Predicate<ItemStack> cropProduct) {
@@ -106,7 +108,12 @@ public final class AutoEater {
         if (!held.is(want) && !InvUtil.ensureInHand(mc, player, s -> s.is(want))) {
             return Result.RUNNING;
         }
-        player.setXRot(-90); // 하늘을 보고 먹는다 (블록 우클릭 방지)
+        // 하늘 쪽을 보고 먹는다 (사용 키가 블록을 우클릭하지 않게)
+        Look.INSTANCE.setAngles(player, eatYaw, -70f, 3f);
+        boolean pointingAtBlock = mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+        if ((!Look.INSTANCE.aligned(player, 6f) || pointingAtBlock) && ticks < 40) {
+            return Result.RUNNING;
+        }
         mc.gameMode.useItem(player, InteractionHand.MAIN_HAND);
         mc.options.keyUse.setDown(true);
         return Result.RUNNING;

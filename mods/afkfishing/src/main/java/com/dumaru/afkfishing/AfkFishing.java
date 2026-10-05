@@ -1,5 +1,6 @@
 package com.dumaru.afkfishing;
 
+import com.dumaru.afkfishing.common.Look;
 import com.dumaru.afkfishing.common.Navigator;
 import com.dumaru.afkfishing.farm.FarmController;
 import com.dumaru.afkfishing.gui.AfkScreen;
@@ -19,6 +20,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
@@ -61,12 +63,16 @@ public class AfkFishing {
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, e -> {
             FishingController.INSTANCE.stop("서버 접속 종료");
             FarmController.INSTANCE.onDisconnect();
+            Look.INSTANCE.release();
         });
         NeoForge.EVENT_BUS.addListener(RenderLevelStageEvent.class, AreaRenderer::render);
+        // 시선 회전은 프레임마다 조금씩 (틱마다 꺾으면 뚝뚝 끊겨 보인다)
+        NeoForge.EVENT_BUS.addListener(RenderFrameEvent.Pre.class, e -> Look.INSTANCE.update());
     }
 
     private static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
+        Look.INSTANCE.update(); // 창이 최소화돼 프레임이 안 돌 때도 돌아가도록
         while (KEY_OPEN_GUI.consumeClick()) {
             if (mc.screen == null) {
                 mc.setScreen(new AfkScreen(null));
