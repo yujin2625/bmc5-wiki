@@ -20,7 +20,8 @@ public final class AutoEater {
     public enum FoodMode {
         OFF("끔"),
         NON_CROP("작물 제외"),
-        ANY("아무거나");
+        ANY("아무거나"),
+        BASKET("도시락 바구니만");
 
         public final String label;
 
@@ -37,6 +38,58 @@ public final class AutoEater {
     private int ticks;
     private int startFood;
     private float eatYaw;
+    private int toggles;
+    private int nextToggleAt;
+
+    // ---- Supplementaries 도시락 바구니 (리플렉션: 모드가 없어도 문제없게) ----
+
+    private static final net.minecraft.resources.ResourceLocation BASKET_ID =
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("supplementaries", "lunch_basket");
+
+    public static boolean isBasket(ItemStack stack) {
+        return !stack.isEmpty() && net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(BASKET_ID);
+    }
+
+    /** 바구니 안 내용 (LunchBaskedContent). 없으면 null. */
+    private static Object basketContent(ItemStack stack) {
+        if (!isBasket(stack)) {
+            return null;
+        }
+        for (net.minecraft.core.component.TypedDataComponent<?> c : stack.getComponents()) {
+            Object v = c.value();
+            if (v != null && v.getClass().getSimpleName().startsWith("LunchBasked")) {
+                return v;
+            }
+        }
+        return null;
+    }
+
+    /** 바구니에서 지금 고른 음식 (먹으면 이게 나간다). 비었으면 빈 스택. */
+    public static ItemStack basketSelected(ItemStack stack) {
+        Object content = basketContent(stack);
+        if (content == null) {
+            return ItemStack.EMPTY;
+        }
+        try {
+            Object selected = content.getClass().getMethod("getSelected").invoke(content);
+            return selected instanceof ItemStack s ? s : ItemStack.EMPTY;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return ItemStack.EMPTY;
+        }
+    }
+
+    /** 바구니가 열려 있는지(먹기 모드). */
+    private static boolean basketOpen(ItemStack stack) {
+        Object content = basketContent(stack);
+        if (content == null) {
+            return false;
+        }
+        try {
+            return (Boolean) content.getClass().getMethod("canEatFrom").invoke(content);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
 
     public boolean isActive() {
         return active;
@@ -50,11 +103,14 @@ public final class AutoEater {
         return player.getFoodData().getFoodLevel() <= AfkConfig.EAT_BELOW.get() && findFood(player, cropProduct) >= 0;
     }
 
-    /** 먹을 음식 슬롯. 해로운 효과가 없는 것 중 허기를 가장 많이 채우는 것. */
+    /** 먹을 음식 슬롯. 해로운 효과가 없는 것 중 허기를 가장 많이 채우는 것. 바구니 모드면 음식이 든 도시락 바구니. */
     public static int findFood(LocalPlayer player, Predicate<ItemStack> cropProduct) {
         FoodMode mode = AfkConfig.FOOD_MODE.get();
         if (mode == FoodMode.OFF) {
             return -1;
+        }
+        if (mode == FoodMode.BASKET) {
+            return InvUtil.find(player, s -> isBasket(s) && !basketSelected(s).isEmpty());
         }
         Inventory inv = player.getInventory();
         int best = -1;
@@ -84,6 +140,8 @@ public final class AutoEater {
         ticks = 0;
         startFood = player.getFoodData().getFoodLevel();
         eatYaw = player.getYRot();
+        toggles = 0;
+        nextToggleAt = 0;
     }
 
     public Result tick(Minecraft mc, LocalPlayer player, Predicate<ItemStack> cropProduct) {
@@ -104,14 +162,35 @@ public final class AutoEater {
             return Result.RUNNING;
         }
         ItemStack held = player.getInventory().getSelected();
-        net.minecraft.world.item.Item want = player.getInventory().getItem(slot).getItem();
-        if (!held.is(want) && !InvUtil.ensureInHand(mc, player, s -> s.is(want))) {
-            return Result.RUNNING;
+        boolean basket = AfkConfig.FOOD_MODE.get() == FoodMode.BASKET;
+        if (basket) {
+            if (!isBasket(held) || basketSelected(held).isEmpty()) {
+                if (!InvUtil.ensureInHand(mc, player, s -> isBasket(s) && !basketSelected(s).isEmpty())) {
+                    return Result.RUNNING;
+                }
+                held = player.getInventory().getSelected();
+            }
+        } else {
+            net.minecraft.world.item.Item want = player.getInventory().getItem(slot).getItem();
+            if (!held.is(want) && !InvUtil.ensureInHand(mc, player, s -> s.is(want))) {
+                return Result.RUNNING;
+            }
         }
         // 하늘 쪽을 보고 먹는다 (사용 키가 블록을 우클릭하지 않게)
         Look.INSTANCE.setAngles(player, eatYaw, -70f, 3f);
         boolean pointingAtBlock = mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK;
         if ((!Look.INSTANCE.aligned(player, 6f) || pointingAtBlock) && ticks < 40) {
+            return Result.RUNNING;
+        }
+        if (basket && !basketOpen(held)) {
+            // 도시락 바구니는 왼클릭으로 열어야(먹기 모드) 안의 음식을 먹을 수 있다. 하늘을 보고 한 번 왼클릭.
+            if (ticks >= nextToggleAt) {
+                if (++toggles > 3) {
+                    return finish(mc, Result.FAILED);
+                }
+                net.minecraft.client.KeyMapping.click(mc.options.keyAttack.getKey());
+                nextToggleAt = ticks + 15; // 서버에서 바뀐 상태가 돌아올 때까지
+            }
             return Result.RUNNING;
         }
         mc.gameMode.useItem(player, InteractionHand.MAIN_HAND);

@@ -642,7 +642,7 @@ public final class FishingController {
 
     /** 정리할 때 절대 옮기지 않는 것: 낚싯대, 바늘·찌·미끼·모자, 침낭. */
     private static boolean isGear(ItemStack stack) {
-        if (isRod(stack) || stack.is(LURE_ITEMS) || stack.is(SleepModule.SLEEPING_BAG_ITEMS)) {
+        if (isRod(stack) || stack.is(LURE_ITEMS) || stack.is(SleepModule.SLEEPING_BAG_ITEMS) || AutoEater.isBasket(stack)) {
             return true;
         }
         for (TagKey<Item> tag : SC_GEAR) {

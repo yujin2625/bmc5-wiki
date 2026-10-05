@@ -422,8 +422,12 @@ public class AfkScreen extends Screen {
             case FISH -> renderFishInfo(g, y);
             case FARM -> renderFarmInfo(g, y);
             case SETUP -> renderSetupInfo(g);
-            case COMMON -> g.drawCenteredString(font, "자동으로 먹기: 작물 제외 = 농사로 거둔 작물은 먹지 않음. 효과가 붙은 음식은 먹지 않음",
-                    width / 2, y, 0xAAAAAA);
+            case COMMON -> {
+                g.drawCenteredString(font, "자동으로 먹기: 작물 제외 = 농사로 거둔 작물은 먹지 않음. 효과가 붙은 음식은 먹지 않음",
+                        width / 2, y, 0xAAAAAA);
+                g.drawCenteredString(font, "도시락 바구니만 = Supplementaries 도시락 바구니에서 지금 골라 둔 음식만 먹음 (닫혀 있으면 열어서)",
+                        width / 2, y + 10, 0xAAAAAA);
+            }
         }
     }
 

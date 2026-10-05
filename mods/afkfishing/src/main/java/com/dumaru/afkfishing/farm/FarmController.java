@@ -1583,6 +1583,7 @@ public final class FarmController {
     /** 절대 상자에 넣지 않는 것: 도구, 침낭, 낚싯바늘, 쓸 뼛가루. */
     private boolean isProtected(ItemStack stack) {
         return stack.isDamageableItem() || stack.is(SleepModule.SLEEPING_BAG_ITEMS) || stack.is(LURE_ITEMS)
+                || AutoEater.isBasket(stack)
                 || FishingController.isRod(stack)
                 || (stack.is(Items.BONE_MEAL) && AfkConfig.FARM_BONEMEAL.get());
     }
