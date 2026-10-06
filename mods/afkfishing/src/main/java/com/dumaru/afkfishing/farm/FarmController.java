@@ -1063,7 +1063,7 @@ public final class FarmController {
         Navigator.Result r = Navigator.INSTANCE.tick(player);
         if (r == Navigator.Result.ARRIVED) {
             FarmData.FishSpot spot = data.fishSpot;
-            if (FishingController.INSTANCE.startEmbedded(spot.yaw, spot.pitch)) {
+            if (FishingController.INSTANCE.startEmbedded(spot.yaw, spot.pitch, startCounts)) {
                 setState(State.FISHING);
             } else {
                 fishRetryAt = System.currentTimeMillis() + FISH_RETRY_MS;
@@ -1339,10 +1339,13 @@ public final class FarmController {
     }
 
     private boolean belongsTo(ItemStack stack, FarmData.ChestEntry chest) {
+        String crop = productCache.get(stack.getItem());
+        if (crop == null && FishingController.INSTANCE.hasDepositTargets() && FishingController.INSTANCE.ownsLoot(stack)) {
+            return false; // 물고기·낚시 전리품은 낚시 상자/태클박스로 (낚시 쪽이 넣는다)
+        }
         if (chest.auto) {
             return true;
         }
-        String crop = productCache.get(stack.getItem());
         if (!chest.catchAll) {
             return crop != null && chest.crops.contains(crop);
         }

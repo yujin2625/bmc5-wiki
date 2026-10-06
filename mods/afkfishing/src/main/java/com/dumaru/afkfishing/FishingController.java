@@ -121,6 +121,8 @@ public final class FishingController {
     private long startedAtMillis;
     private int catches;
     private final Map<Item, Integer> loot = new HashMap<>();
+    /** 낚시로 얻은 적 있는 아이템 종류 (농사 정리가 이건 낚시 보관함 몫으로 남겨 둔다) */
+    private final java.util.Set<Item> lootItems = new java.util.HashSet<>();
     private Map<Item, Integer> lootSnapshot;
     private int lootCheckIn = -1;
     private String lastMessage = "";
@@ -218,12 +220,18 @@ public final class FishingController {
     }
 
     /** 자동 농사가 기다리는 동안 낚시를 시킬 때. 정해진 방향으로 던진다. */
-    public boolean startEmbedded(float yaw, float pitch) {
+    public boolean startEmbedded(float yaw, float pitch, Map<Item, Integer> baseline) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null || isRunning()) {
             return false;
         }
-        return begin(player, yaw, pitch, true);
+        if (!begin(player, yaw, pitch, true)) {
+            return false;
+        }
+        if (baseline != null) {
+            startCounts = new HashMap<>(baseline);
+        }
+        return true;
     }
 
     /** 자동 농사가 일하러 갈 때. 찌를 회수하고 조용히 멈춘다. */
@@ -707,6 +715,20 @@ public final class FishingController {
         return Math.max(0, (nextDepositAt - System.currentTimeMillis()) / 1000);
     }
 
+    /** 낚시 보관함(낚시 상자 또는 태클박스)이 지정돼 있고 정리가 켜져 있는지. */
+    public boolean hasDepositTargets() {
+        if (!AfkConfig.FISH_DEPOSIT.get()) {
+            return false;
+        }
+        FarmData data = FarmData.current();
+        return data.fishChest != null || (data.tackleBox != null && Starcatcher.isAvailable());
+    }
+
+    /** 낚시 몫인 아이템인지: 물고기이거나 낚시로 얻은 적 있는 아이템 (낚싯대·바늘 등 장비는 제외). */
+    public boolean ownsLoot(ItemStack stack) {
+        return (isFish(stack) || lootItems.contains(stack.getItem())) && !isGear(stack);
+    }
+
     public String depositLabel() {
         return deposit.isActive() ? deposit.label() : "";
     }
@@ -858,6 +880,7 @@ public final class FishingController {
             int gained = count - lootSnapshot.getOrDefault(item, 0);
             if (gained > 0) {
                 loot.merge(item, gained, Integer::sum);
+                lootItems.add(item);
             }
         });
     }
