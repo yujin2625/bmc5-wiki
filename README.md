@@ -62,3 +62,9 @@ python tools/build_site.py
 4. `python tools/build_site.py` 실행 후 커밋하고 push하면 배포됩니다.
 
 폰트는 모든 페이지에 쓰인 글자만 담아서 만들기 때문에, 새 글자가 생기면 빌드를 다시 돌려야 합니다.
+
+## 저작권 고지
+
+비공식 팬 위키이며 Mojang Studios, Microsoft, BMC5 모드팩 제작진 및 각 모드 제작자와 관련이 없습니다.
+
+Minecraft는 Mojang Studios의 상표입니다. `docs/mobs/img`의 몹 이미지 등 게임·모드 에셋의 저작권은 각 권리자에게 있으며, 참고 목적으로만 사용합니다. 권리자의 요청이 있으면 즉시 삭제하겠습니다.
