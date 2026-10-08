@@ -68,3 +68,7 @@ python tools/build_site.py
 비공식 팬 위키이며 Mojang Studios, Microsoft, BMC5 모드팩 제작진 및 각 모드 제작자와 관련이 없습니다.
 
 Minecraft는 Mojang Studios의 상표입니다. `docs/mobs/img`의 몹 이미지 등 게임·모드 에셋의 저작권은 각 권리자에게 있으며, 참고 목적으로만 사용합니다. 권리자의 요청이 있으면 즉시 삭제하겠습니다.
+
+## 라이선스
+
+이 저장소의 코드와 직접 작성한 문서는 [PolyForm Noncommercial 1.0.0](LICENSE.md)을 따릅니다. 비영리 목적의 사용, 수정, 재배포는 자유지만 상업적 사용은 허용되지 않으며, 재배포할 때는 저작권 표시(`Required Notice`)와 라이선스 문구를 함께 포함해야 합니다. 위 저작권 고지에 적힌 게임·모드 에셋은 이 라이선스에 포함되지 않습니다.
